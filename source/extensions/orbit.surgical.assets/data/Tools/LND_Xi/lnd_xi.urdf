@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot name="lnd_Xi">
+
+    <link name="lnd"/>
+
+    <joint name="root_joint" type="fixed">
+      <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+      <parent link="lnd"/>
+      <child link="lnd_base_link"/>
+    </joint>
+
+    <link name="lnd_base_link">
+      <inertial>
+        <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+        <mass value="2.0160999"/>
+        <inertia ixx="0." ixy="0." ixz="0." iyy="0." iyz="0." izz="0."/>
+      </inertial>
+    </link>
+
+    <joint name="Xi_housing_joint" type="fixed">
+      <origin xyz="-0.015 0. 0.06" rpy="0. 1.5707964 0." />
+      <parent link="lnd_main_insertion_link_3" />
+      <child link="Xi_housing_link" />
+    </joint>
+
+    <link name="Xi_housing_link">
+      <inertial>
+        <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+        <mass value="0.2"/> <!-- FIX MASS -->
+        <inertia ixx="0." ixy="0." ixz="0." iyy="0." iyz="0." izz="0."/>
+      </inertial>
+      <visual> <!-- FIX GET XI STL FOR HOUSING -->
+        <origin xyz="0. 0. 0." rpy="0 0 0" />
+        <geometry>
+          <box size="0.06 0.045 0.08" />
+        </geometry>
+        <material name="housing_white">
+          <color rgba="1.0 1.0 1.0 1.0" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+        <geometry>
+          <box size="0.08 0.05 0.09" />
+        </geometry>
+      </collision>
+    </link>
+    
+    <joint name="lnd_main_insertion_joint_3" type="fixed">
+      <origin xyz="0. 0. -0.61421" rpy="0. 0. 1.5707963"/>
+      <parent link="lnd_base_link"/>
+      <child link="lnd_main_insertion_link_3"/>
+    </joint>
+
+    <link name="lnd_main_insertion_link_3">
+      <visual>
+        <origin xyz="0. 0. 0.0004" rpy="0. 0. 0."/>
+        <geometry>
+          <mesh filename="meshes/lnd_main_insertion_link_3_visuals_xform_visuals.obj" scale="1. 1. 1."/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0. 0. 0.0004" rpy="0. 0. 0."/>
+        <geometry>
+          <mesh filename="meshes/lnd_main_insertion_link_3_visuals_xform_visuals.obj" scale="1. 1. 1."/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="lnd_tool_roll_joint" type="revolute">
+      <origin xyz="0. 0. 0.59862 " rpy="0.-1.5707963 -1.5707963"/>
+      <parent link="lnd_main_insertion_link_3"/>
+      <child link="lnd_tool_roll_link"/>
+      <axis xyz="1. 0. 0."/>
+      <limit lower="-4.5378997" upper="4.5378997" effort="6000." velocity="2.0999999"/>
+    </joint>
+
+    <link name="lnd_tool_roll_link">
+      <inertial>
+        <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+        <mass value="0.0003322"/>
+        <inertia ixx="0." ixy="0." ixz="0." iyy="0." iyz="0." izz="0."/>
+      </inertial>
+      <visual>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_tool_roll_link_visuals_xform_visuals.obj" scale="1. 1. 1."/>
+        </geometry>
+      </visual>
+      <visual>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_tool_roll_link_collisions_xform_collisions.obj" scale="1. 1. 1."/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_tool_roll_link_visuals_xform_visuals.obj" scale="1. 1. 1."/>
+        </geometry>
+      </collision>
+      <collision>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_tool_roll_link_collisions_xform_collisions.obj" scale="1. 1. 1."/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="lnd_tool_pitch_joint" type="revolute">
+      <origin xyz="0. 0. 0." rpy="-1.5707964 0. 1.5707964"/>
+      <parent link="lnd_tool_roll_link"/>
+      <child link="lnd_tool_pitch_link"/>
+      <axis xyz="1. 0. 0."/>
+      <limit lower="-1.3962999" upper="1.3962999" effort="6000." velocity="2.0999999"/>
+    </joint>
+
+    <link name="lnd_tool_pitch_link">
+      <inertial>
+        <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+        <mass value="0.0002578"/>
+        <inertia ixx="0." ixy="0." ixz="0." iyy="0." iyz="0." izz="0."/>
+      </inertial>
+      <visual>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/tool_pitch_link.obj" scale="1. 1. 1."/>
+        </geometry>
+      </visual>
+      <visual>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_tool_pitch_link_collisions_xform_collisions.obj" scale="1. 1. 1."/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_tool_pitch_link_visuals_xform_visuals.obj" scale="1. 1. 1."/>
+        </geometry>
+      </collision>
+      <collision>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_tool_pitch_link_collisions_xform_collisions.obj" scale="1. 1. 1."/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="lnd_tool_yaw_joint" type="revolute">
+      <origin xyz="0. 0. -0.0091" rpy="-1.5707964 0. 1.5707964"/>
+      <parent link="lnd_tool_pitch_link"/>
+      <child link="lnd_tool_yaw_link"/>
+      <axis xyz="1. 0. 0."/>
+      <limit lower="-0.5235988" upper="0.5235988" effort="6000." velocity="2.0999999"/>
+    </joint>
+
+    <link name="lnd_tool_yaw_link">
+      <inertial>
+        <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+        <mass value="0.1"/>
+        <inertia ixx="0." ixy="0." ixz="0." iyy="0." iyz="0." izz="0."/>
+      </inertial>
+      <visual>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/tool_yaw_link.obj" scale="1. 1. 1."/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_tool_yaw_link_visuals_xform_visuals.obj" scale="1. 1. 1."/>
+        </geometry>
+      </collision>
+      <collision>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/tool_yaw_link.obj" scale="1. 1. 1."/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="lnd_tool_gripper1_joint" type="revolute">
+      <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+      <parent link="lnd_tool_yaw_link"/>
+      <child link="lnd_tool_gripper1_link"/>
+      <axis xyz="1. 0. 0."/>
+      <limit lower="-0.5235988" upper="0." effort="1200." velocity="2.0999999"/>  
+    </joint>
+
+    <link name="lnd_tool_gripper1_link">
+      <inertial>
+        <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+        <mass value="0.02"/>
+        <inertia ixx="0." ixy="0." ixz="0." iyy="0." iyz="0." izz="0."/>
+      </inertial>
+      <visual>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/gripper_right.obj" scale="1. 1. 1."/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="-0.0000002 0.0051 -0.0007 " rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_tool_gripper1_link_collisions_xform_collisions.obj" scale="0.00009 0.0004 0.0001 "/>
+        </geometry>
+      </collision>
+    </link>
+     
+    <joint name="lnd_tool_gripper2_joint" type="revolute">
+      <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+      <parent link="lnd_tool_yaw_link"/>
+      <child link="lnd_tool_gripper2_link"/>
+      <axis xyz="1. 0. 0."/>
+      <limit lower="0." upper="0.5235988" effort="1200." velocity="2.0999999"/>
+    </joint>
+
+    <link name="lnd_tool_gripper2_link">
+      <inertial>
+        <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+        <mass value="0.02"/>
+        <inertia ixx="0." ixy="0." ixz="0." iyy="0." iyz="0." izz="0."/>
+      </inertial>
+      <visual>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/gripper_left.obj" scale="1. 1. 1."/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="-0.0000002 0.0051 0.0007 " rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_tool_gripper2_link_collisions_xform_collisions.obj" scale="0.00009 0.0004 0.0001 "/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="lnd_tool_tip_joint" type="fixed">
+      <origin xyz="0. 0.0093 0. " rpy="-1.5707964 0. 0. "/>
+      <parent link="lnd_tool_yaw_link"/>
+      <child link="lnd_tool_tip_link"/>
+    </joint>
+
+    <link name="lnd_tool_tip_link">
+      <inertial>
+        <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+        <mass value="0.1"/>
+        <inertia ixx="0." ixy="0." ixz="0." iyy="0." iyz="0." izz="0."/>
+      </inertial>
+    </link>
+
+</robot>

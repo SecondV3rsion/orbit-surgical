@@ -1,0 +1,544 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot name="mops"> 
+
+
+	
+<!--               JOINTS                -->
+    
+  <joint name="root_joint" type="fixed">
+    <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+    <parent link="kuka_lwr"/>
+    <child link="kuka_link_0"/>
+  </joint>
+
+  <joint name="kuka_joint_1" type="revolute">
+      <origin xyz="0. 0. 0.11" rpy="0. 0. 0."/>
+      <parent link="kuka_link_0"/>
+      <child link="kuka_link_1"/>
+      <axis xyz="0. 0. 1."/>
+      <limit lower="-2.96706" upper="2.96706" effort="5000." velocity="1.9198619" />
+  </joint>
+
+  <joint name="kuka_joint_2" type="revolute">
+    <origin xyz="0 0 0.2005" rpy="0 0 0"/>
+    <parent link="kuka_link_1"/>
+    <child link="kuka_link_2"/>
+    <axis xyz="0. -1. 0."/>
+    <limit lower="-2.0943948" upper="2.0943948" effort="5000." velocity="1.9198619" />
+  </joint>
+
+  <joint name="kuka_joint_3" type="revolute">
+		<origin xyz="0 0 0.2" rpy="0 0 0"/>
+		<parent link="kuka_link_2"/>
+		<child link="kuka_link_3"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.96706" upper="2.96706" effort="5000." velocity="2.234021" />
+	</joint>
+
+  <joint name="kuka_joint_4" type="revolute">
+		<origin xyz="0 0 0.2" rpy="0 0 0"/>
+		<parent link="kuka_link_3"/>
+		<child link="kuka_link_4"/>
+    <axis xyz="0 1 0"/>
+		<limit lower="-2.0943948" upper="2.0943948" effort="5000." velocity="2.234021" />
+	</joint>
+
+  <joint name="kuka_joint_5" type="revolute">
+		<origin xyz="0 0 0.20" rpy="0 0 0"/>
+		<parent link="kuka_link_4"/>
+		<child link="kuka_link_5"/>
+    <axis xyz="0 0 1"/>
+		<limit lower="-2.96706" upper="2.96706" effort="5000." velocity="3.56047" />
+	</joint>
+
+	<joint name="kuka_joint_6" type="revolute">
+		<origin xyz="0 0 0.19" rpy="0 0 0"/>
+		<parent link="kuka_link_5"/>
+		<child link="kuka_link_6"/>
+    <axis xyz="0 -1 0"/>
+		<limit lower="-2.0943948" upper="2.0943948" effort="5000." velocity="3.211405" />
+	</joint>
+
+	<joint name="kuka_joint_7" type="revolute">
+		<origin xyz="0 0 0.078" rpy="0 0 0"/>
+		<parent link="kuka_link_6"/>
+		<child link="kuka_link_7"/>
+    <axis xyz="0 0 1"/>
+		<limit lower="-2.96706" upper="2.96706" effort="5000." velocity="3.211405" />
+	</joint>
+
+	<!-- LND Xi tool joints -->
+    <joint name="lnd_root_joint" type="fixed">
+      <origin xyz="0.614720316841551 0.088064119102809 0.001429763596620" rpy="0. 1.570796326795 0."/>
+      <parent link="kuka_link_7"/>
+      <child link="lnd_base_link"/>
+    </joint>
+
+    <joint name="Xi_housing_joint" type="fixed">
+      <origin xyz="-0.015 0. 0.06" rpy="0. 1.5707964 0." />
+      <parent link="lnd_main_insertion_link_3" />
+      <child link="Xi_housing_link" />
+    </joint>
+
+    <joint name="lnd_main_insertion_joint_3" type="fixed">
+      <origin xyz="0. 0. -0.61421" rpy="0. 0. 1.5707963"/>
+      <parent link="lnd_base_link"/>
+      <child link="lnd_main_insertion_link_3"/>
+    </joint>
+
+    <joint name="lnd_tool_roll_joint" type="revolute">
+      <origin xyz="0. 0. 0.59862 " rpy="0.-1.5707963 -1.5707963"/>
+      <parent link="lnd_main_insertion_link_3"/>
+      <child link="lnd_tool_roll_link"/>
+      <axis xyz="1. 0. 0."/>
+      <limit lower="-4.5378997" upper="4.5378997" effort="6000." velocity="2.0999999"/>
+    </joint>
+
+    <joint name="lnd_tool_pitch_joint" type="revolute">
+      <origin xyz="0. 0. 0." rpy="-1.5707964 0. 1.5707964"/>
+      <parent link="lnd_tool_roll_link"/>
+      <child link="lnd_tool_pitch_link"/>
+      <axis xyz="1. 0. 0."/>
+      <limit lower="-1.3962999" upper="1.3962999" effort="6000." velocity="2.0999999"/>
+    </joint>
+
+    <joint name="lnd_tool_yaw_joint" type="revolute">
+      <origin xyz="0. 0. -0.0091" rpy="-1.5707964 0. 1.5707964"/>
+      <parent link="lnd_tool_pitch_link"/>
+      <child link="lnd_tool_yaw_link"/>
+      <axis xyz="1. 0. 0."/>
+      <limit lower="-0.5235988" upper="0.5235988" effort="6000." velocity="2.0999999"/>
+    </joint>
+
+    <joint name="lnd_tool_gripper1_joint" type="revolute">
+      <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+      <parent link="lnd_tool_yaw_link"/>
+      <child link="lnd_tool_gripper1_link"/>
+      <axis xyz="1. 0. 0."/>
+      <limit lower="-0.5235988" upper="0." effort="1200." velocity="2.0999999"/>  
+    </joint>
+
+    <joint name="lnd_tool_gripper2_joint" type="revolute">
+      <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+      <parent link="lnd_tool_yaw_link"/>
+      <child link="lnd_tool_gripper2_link"/>
+      <axis xyz="1. 0. 0."/>
+      <limit lower="0." upper="0.5235988" effort="1200." velocity="2.0999999"/>
+    </joint>
+
+    <joint name="lnd_tool_tip_joint" type="fixed">
+      <origin xyz="0. 0.0093 0. " rpy="-1.5707964 0. 0. "/>
+      <parent link="lnd_tool_yaw_link"/>
+      <child link="lnd_tool_tip_link"/>
+    </joint>
+
+  <!--               LINKS                -->
+  
+  <link name="kuka_lwr"/>
+
+  <link name="kuka_link_0">
+    <inertial>
+      <origin xyz="0. 0. 0.055" rpy="0. 0. 0."/>
+      <mass value="2."/>
+      <inertia ixx="0.003816" iyy="0.0036" izz="0.003816" ixy="0." iyz="0." ixz="0."/>
+    </inertial>
+    <visual>
+      <origin xyz="0. 0. 0." rpy="0. 0. 3.1415926535897931"/>
+      <geometry>
+        <mesh filename="meshes/kuka_lwr/base.STL" scale="1. 1. 1."/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0. 0. 0." rpy="0. 0. 3.1415926535897931"/>
+      <geometry>
+        <mesh filename="meshes/star_link_0_collisions.obj" scale="1. 1. 1."/>
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="kuka_link_1">
+    <inertial>
+      <origin xyz="0. -0.06 0.130" rpy="0. 0. 0."/>
+      <mass value="2."/>
+      <inertia ixx="0.01605833" iyy="0.003525" izz="0.013943" ixy="0." iyz="0." ixz="0."/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 -0.008" rpy="0 0 3.1415926535897931"/>
+      <geometry>
+        <mesh filename="meshes/kuka_lwr/link_1.STL" scale="1. 1. 1."/>
+      </geometry>
+    </visual>
+		<collision>
+        <origin xyz="0 0 0.0" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.07"/>
+        </geometry>
+    </collision>
+    <collision>
+        <origin xyz="0 0.06 0.2" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.07"/>
+        </geometry>
+    </collision>
+    <collision>
+        <origin xyz="0 0.03 0.1" rpy="-0.291 0 0"/>
+        <geometry>
+          <cylinder radius="0.07" length="0.208"/>
+        </geometry>
+		</collision>
+  </link>
+
+  <link name="kuka_link_2">
+    <inertial>
+      <origin xyz="0. 0.06 0.124" rpy="0. 0. 0."/>
+      <mass value="2."/>
+      <inertia ixx="0.01605833" iyy="0.003525" izz="0.013943" ixy="0." iyz="0." ixz="0."/>
+    </inertial>
+    <visual>
+      <origin xyz="0. 0. 0." rpy="0. 0. 3.1415926535897931"/>
+      <geometry>
+        <mesh filename="meshes/kuka_lwr/link_2.STL" scale="1. 1. 1."/>
+      </geometry>
+    </visual>
+		<collision>
+			<origin xyz="0 0 0.2" rpy="0 0 0"/>
+			<geometry>
+				<sphere radius="0.07"/>
+			</geometry>
+		</collision>
+		<collision>
+			<origin xyz="0 -0.06 0.0" rpy="0 0 0"/>
+			<geometry>
+				<sphere radius="0.07"/>
+			</geometry>
+		</collision>
+		<collision>
+			<origin xyz="0 -0.03 0.1" rpy="-0.291 0 0"/>
+			<geometry>
+				<cylinder radius="0.07" length="0.208"/>
+			</geometry>
+		</collision>
+  </link>
+
+  <link name="kuka_link_3">
+		<inertial>
+			<mass value="2."/>
+			<origin xyz="0 0.06 0.130" rpy="0 0 0"/>
+			<inertia ixx="0.01605833" iyy="0.003525" izz="0.013943" ixy="0." iyz="0." ixz="0."/>
+		</inertial>
+		<visual>
+			<origin xyz="0 0 -0.008" rpy="0 0 3.1415926535897931"/>
+			<geometry>
+				<mesh filename="meshes/kuka_lwr/link_3.STL" scale="1. 1. 1."/>
+			</geometry>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+			<geometry>
+				<sphere radius="0.07"/>
+			</geometry>
+		</collision>
+		<collision>
+			<origin xyz="0 -0.06 0.2" rpy="0 0 0"/>
+			<geometry>
+				<sphere radius="0.07"/>
+			</geometry>
+		</collision>
+		<collision>
+			<origin xyz="0 -0.03 0.1" rpy="0.291 0 0"/>
+			<geometry>
+				<cylinder radius="0.07" length="0.208"/>
+			</geometry>
+		</collision>
+	</link>
+  
+  <link name="kuka_link_4">
+		<inertial>
+			<mass value="2."/>
+			<origin xyz="0. -0.06 0.124" rpy="0. 0. 0."/>
+			<inertia ixx="0.01605833" iyy="0.003525" izz="0.013943" ixy="0." iyz="0." ixz="0."/>
+		</inertial>
+		<visual>
+			<origin xyz="0. 0. 0." rpy="0. 0. 3.1415926535897931"/>
+			<geometry>
+				<mesh filename="meshes/kuka_lwr/link_4.STL"/>
+			</geometry>
+		</visual>
+		<collision>
+		<origin xyz="0 0 0.2" rpy="0 0 0"/>
+		<geometry>
+			<sphere radius="0.07"/>
+		</geometry>
+		</collision>
+		<collision>
+			<origin xyz="0 0.06 0.0" rpy="0 0 0"/>
+			<geometry>
+				<sphere radius="0.07"/>
+			</geometry>
+		</collision>
+		<collision>
+			<origin xyz="0 0.03 0.1" rpy="0.291 0 0"/>
+			<geometry>
+				<cylinder radius="0.07" length="0.208"/>
+			</geometry>
+		</collision>
+	</link>
+
+	<link name="kuka_link_5">
+		<inertial>
+			<mass value="2."/>
+			<origin xyz="0. 0. 0.124" rpy="0. 0. 0."/>
+			<inertia ixx="0.01486453" iyy="0.003525" izz="0.01274953" ixy="0." iyz="0." ixz="0."/>
+		</inertial>
+		<visual>
+			<origin xyz="0. 0. -0.008" rpy="0. 0. 3.1415926535897931"/>
+			<geometry>
+				<mesh filename="meshes/kuka_lwr/link_5.STL"/>
+			</geometry>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+			<geometry>
+				<sphere radius="0.07"/>
+			</geometry>
+		</collision>
+		<collision>
+			<origin xyz="0 0.04 0.19" rpy="0 0 0"/>
+			<geometry>
+				<sphere radius="0.07"/>
+			</geometry>
+		</collision>
+		<collision>
+			<origin xyz="0 0.02 0.095" rpy="-0.207 0 0"/>
+			<geometry>
+				<cylinder radius="0.07" length="0.198"/>
+			</geometry>
+		</collision>
+	</link>
+
+	<link name="kuka_link_6">
+		<inertial>
+			<mass value="0.2"/>
+			<origin xyz="0 0 0.0625" rpy="0. 0. 0."/>
+			<inertia ixx="0.002864583" iyy="0.002864583" izz="0.002864583" ixy="0." iyz="0." ixz="0."/>
+		</inertial>
+		<visual>
+			<origin xyz="0. 0. 0." rpy="0. 0. 3.1415926535897931"/>
+			<geometry>
+				<mesh filename="meshes/kuka_lwr/link_6.STL"/>
+			</geometry>
+		</visual>
+		<collision>
+		<origin xyz="0 -0.01 0" rpy="0 0 3.1415926535897931"/>
+		<geometry>
+			<sphere radius="0.08"/>
+		</geometry>
+		</collision>
+	</link>
+
+  	<link name="kuka_link_7">
+		<inertial>
+			<mass value="0.2"/>
+			<origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+			<inertia ixx="0.0004166" iyy="0.0004166" izz="0.000416" ixy="0." iyz="0." ixz="0."/>
+		</inertial>
+		<visual>
+			<origin xyz="0. 0. 0." rpy="0. 0. 3.1415926535897931"/>
+			<geometry>
+				<mesh filename="meshes/kuka_lwr/link_7.STL"/>
+			</geometry>
+		</visual>
+		<collision>
+		<origin xyz="0. 0. 0." rpy="0 0 3.1415926535897931"/>
+		<geometry>
+			<cylinder radius="0.04" length="0.05"/>
+		</geometry>
+		</collision>
+	</link>
+	
+	<!-- LND Xi tool links -->
+	<link name="lnd_base_link">
+      <inertial>
+        <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+        <mass value="0.01"/>
+        <inertia ixx="0." ixy="0." ixz="0." iyy="0." iyz="0." izz="0."/>
+      </inertial>
+    </link>
+
+    <link name="Xi_housing_link">
+      <inertial>
+        <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+        <mass value="0.1"/> <!-- FIX MASS -->
+        <inertia ixx="0." ixy="0." ixz="0." iyy="0." iyz="0." izz="0."/>
+      </inertial>
+      <visual> <!-- FIX GET XI STL FOR HOUSING -->
+        <origin xyz="0. 0. 0." rpy="0 0 0" />
+        <geometry>
+          <box size="0.06 0.045 0.08" />
+        </geometry>
+        <material name="housing_white">
+          <color rgba="1.0 1.0 1.0 1.0" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+        <geometry>
+          <box size="0.08 0.05 0.09" />
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="lnd_main_insertion_link_3">
+      <visual>
+        <origin xyz="0. 0. 0.0004" rpy="0. 0. 0."/>
+        <geometry>
+          <mesh filename="meshes/lnd_xi/lnd_main_insertion_link_3_visuals_xform_visuals.obj" scale="1. 1. 1."/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0. 0. 0.0004" rpy="0. 0. 0."/>
+        <geometry>
+          <mesh filename="meshes/lnd_xi/lnd_main_insertion_link_3_visuals_xform_visuals.obj" scale="1. 1. 1."/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="lnd_tool_roll_link">
+      <inertial>
+        <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+        <mass value="0.0003322"/>
+        <inertia ixx="0." ixy="0." ixz="0." iyy="0." iyz="0." izz="0."/>
+      </inertial>
+      <visual>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_xi/lnd_tool_roll_link_visuals_xform_visuals.obj" scale="1. 1. 1."/>
+        </geometry>
+      </visual>
+      <visual>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_xi/lnd_tool_roll_link_collisions_xform_collisions.obj" scale="1. 1. 1."/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_xi/lnd_tool_roll_link_visuals_xform_visuals.obj" scale="1. 1. 1."/>
+        </geometry>
+      </collision>
+      <collision>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_xi/lnd_tool_roll_link_collisions_xform_collisions.obj" scale="1. 1. 1."/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="lnd_tool_pitch_link">
+      <inertial>
+        <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+        <mass value="0.0002578"/>
+        <inertia ixx="0." ixy="0." ixz="0." iyy="0." iyz="0." izz="0."/>
+      </inertial>
+      <visual>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_xi/tool_pitch_link.obj" scale="1. 1. 1."/>
+        </geometry>
+      </visual>
+      <visual>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_xi/lnd_tool_pitch_link_collisions_xform_collisions.obj" scale="1. 1. 1."/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_xi/lnd_tool_pitch_link_visuals_xform_visuals.obj" scale="1. 1. 1."/>
+        </geometry>
+      </collision>
+      <collision>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_xi/lnd_tool_pitch_link_collisions_xform_collisions.obj" scale="1. 1. 1."/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="lnd_tool_yaw_link">
+      <inertial>
+        <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+        <mass value="0.1"/>
+        <inertia ixx="0." ixy="0." ixz="0." iyy="0." iyz="0." izz="0."/>
+      </inertial>
+      <visual>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_xi/tool_yaw_link.obj" scale="1. 1. 1."/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_xi/lnd_tool_yaw_link_visuals_xform_visuals.obj" scale="1. 1. 1."/>
+        </geometry>
+      </collision>
+      <collision>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_xi/tool_yaw_link.obj" scale="1. 1. 1."/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="lnd_tool_gripper1_link">
+      <inertial>
+        <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+        <mass value="0.02"/>
+        <inertia ixx="0." ixy="0." ixz="0." iyy="0." iyz="0." izz="0."/>
+      </inertial>
+      <visual>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_xi/gripper_right.obj" scale="1. 1. 1."/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="-0.0000002 0.0051 -0.0007 " rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_xi/lnd_tool_gripper1_link_collisions_xform_collisions.obj" scale="0.00009 0.0004 0.0001 "/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="lnd_tool_gripper2_link">
+      <inertial>
+        <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+        <mass value="0.02"/>
+        <inertia ixx="0." ixy="0." ixz="0." iyy="0." iyz="0." izz="0."/>
+      </inertial>
+      <visual>
+        <origin xyz="0. 0. 0." rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_xi/gripper_left.obj" scale="1. 1. 1."/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="-0.0000002 0.0051 0.0007 " rpy="0. 1.5707963 0. "/>
+        <geometry>
+          <mesh filename="meshes/lnd_xi/lnd_tool_gripper2_link_collisions_xform_collisions.obj" scale="0.00009 0.0004 0.0001 "/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="lnd_tool_tip_link">
+      <inertial>
+        <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+        <mass value="0.1"/>
+        <inertia ixx="0." ixy="0." ixz="0." iyy="0." iyz="0." izz="0."/>
+      </inertial>
+    </link>
+
+</robot>

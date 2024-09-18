@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot name="kuka_lwr"> 
+	
+	<!-- URDF model /-->
+	
+	
+<!--               JOINTS                -->
+    
+  <joint name="root_joint" type="fixed">
+    <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+    <parent link="kuka_lwr"/>
+    <child link="kuka_link_0"/>
+  </joint>
+
+  <joint name="kuka_joint_1" type="revolute">
+      <origin xyz="0. 0. 0.11" rpy="0. 0. 0."/>
+      <parent link="kuka_link_0"/>
+      <child link="kuka_link_1"/>
+      <axis xyz="0. 0. 1."/>
+      <limit lower="-2.96706" upper="2.96706" effort="176." velocity="1.9198619" />
+  </joint>
+
+  <joint name="kuka_joint_2" type="revolute">
+    <origin xyz="0 0 0.2005" rpy="0 0 0"/>
+    <parent link="kuka_link_1"/>
+    <child link="kuka_link_2"/>
+    <axis xyz="0. -1. 0."/>
+    <limit lower="-2.0943948" upper="2.0943948" effort="176." velocity="1.9198619" />
+  </joint>
+
+  <joint name="kuka_joint_3" type="revolute">
+		<origin xyz="0 0 0.2" rpy="0 0 0"/>
+		<parent link="kuka_link_2"/>
+		<child link="kuka_link_3"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.96706" upper="2.96706" effort="100." velocity="2.234021" />
+	</joint>
+
+  <joint name="kuka_joint_4" type="revolute">
+		<origin xyz="0 0 0.2" rpy="0 0 0"/>
+		<parent link="kuka_link_3"/>
+		<child link="kuka_link_4"/>
+    <axis xyz="0 1 0"/>
+		<limit lower="-2.0943948" upper="2.0943948" effort="100." velocity="2.234021" />
+	</joint>
+
+  <joint name="kuka_joint_5" type="revolute">
+		<origin xyz="0 0 0.20" rpy="0 0 0"/>
+		<parent link="kuka_link_4"/>
+		<child link="kuka_link_5"/>
+    <axis xyz="0 0 1"/>
+		<limit lower="-2.96706" upper="2.96706" effort="100." velocity="3.56047" />
+	</joint>
+
+	<joint name="kuka_joint_6" type="revolute">
+		<origin xyz="0 0 0.19" rpy="0 0 0"/>
+		<parent link="kuka_link_5"/>
+		<child link="kuka_link_6"/>
+    <axis xyz="0 -1 0"/>
+		<limit lower="-2.0943948" upper="2.0943948" effort="38." velocity="3.211405" />
+	</joint>
+
+	<joint name="kuka_joint_7" type="revolute">
+		<origin xyz="0 0 0.078" rpy="0 0 0"/>
+		<parent link="kuka_link_6"/>
+		<child link="kuka_link_7"/>
+    <axis xyz="0 0 1"/>
+		<limit lower="-2.96706" upper="2.96706" effort="38." velocity="3.211405" />
+	</joint>
+
+
+  <!--               LINKS                -->
+  
+  <link name="kuka_lwr"/>
+
+  <link name="kuka_link_0">
+    <inertial>
+      <origin xyz="0. 0. 0.055" rpy="0. 0. 0."/>
+      <mass value="2."/>
+      <inertia ixx="0.003816" iyy="0.0036" izz="0.003816" ixy="0." iyz="0." ixz="0."/>
+    </inertial>
+    <visual>
+      <origin xyz="0. 0. 0." rpy="0. 0. 3.1415926535897931"/>
+      <geometry>
+        <mesh filename="meshes/kuka_lwr/base.STL" scale="1. 1. 1."/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0. 0. 0." rpy="0. 0. 3.1415926535897931"/>
+      <geometry>
+        <mesh filename="meshes/star_link_0_collisions.obj" scale="1. 1. 1."/>
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="kuka_link_1">
+    <inertial>
+      <origin xyz="0. -0.06 0.130" rpy="0. 0. 0."/>
+      <mass value="2.35"/>
+      <inertia ixx="0.01605833" iyy="0.003525" izz="0.013943" ixy="0." iyz="0." ixz="0."/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 -0.008" rpy="0 0 3.1415926535897931"/>
+      <geometry>
+        <mesh filename="meshes/kuka_lwr/link_1.STL" scale="1. 1. 1."/>
+      </geometry>
+    </visual>
+		<collision>
+        <origin xyz="0 0 0.0" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.07"/>
+        </geometry>
+    </collision>
+    <collision>
+        <origin xyz="0 0.06 0.2" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.07"/>
+        </geometry>
+    </collision>
+    <collision>
+        <origin xyz="0 0.03 0.1" rpy="-0.291 0 0"/>
+        <geometry>
+          <cylinder radius="0.07" length="0.208"/>
+        </geometry>
+		</collision>
+  </link>
+
+  <link name="kuka_link_2">
+    <inertial>
+      <origin xyz="0. 0.06 0.124" rpy="0. 0. 0."/>
+      <mass value="2.35"/>
+      <inertia ixx="0.01605833" iyy="0.003525" izz="0.013943" ixy="0." iyz="0." ixz="0."/>
+    </inertial>
+    <visual>
+      <origin xyz="0. 0. 0." rpy="0. 0. 3.1415926535897931"/>
+      <geometry>
+        <mesh filename="meshes/kuka_lwr/link_2.STL" scale="1. 1. 1."/>
+      </geometry>
+    </visual>
+		<collision>
+			<origin xyz="0 0 0.2" rpy="0 0 0"/>
+			<geometry>
+				<sphere radius="0.07"/>
+			</geometry>
+		</collision>
+		<collision>
+			<origin xyz="0 -0.06 0.0" rpy="0 0 0"/>
+			<geometry>
+				<sphere radius="0.07"/>
+			</geometry>
+		</collision>
+		<collision>
+			<origin xyz="0 -0.03 0.1" rpy="-0.291 0 0"/>
+			<geometry>
+				<cylinder radius="0.07" length="0.208"/>
+			</geometry>
+		</collision>
+  </link>
+
+  <link name="kuka_link_3">
+		<inertial>
+			<mass value="2.35"/>
+			<origin xyz="0 0.06 0.130" rpy="0 0 0"/>
+			<inertia ixx="0.01605833" iyy="0.003525" izz="0.013943" ixy="0." iyz="0." ixz="0."/>
+		</inertial>
+		<visual>
+			<origin xyz="0 0 -0.008" rpy="0 0 3.1415926535897931"/>
+			<geometry>
+				<mesh filename="meshes/kuka_lwr/link_3.STL" scale="1. 1. 1."/>
+			</geometry>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+			<geometry>
+				<sphere radius="0.07"/>
+			</geometry>
+		</collision>
+		<collision>
+			<origin xyz="0 -0.06 0.2" rpy="0 0 0"/>
+			<geometry>
+				<sphere radius="0.07"/>
+			</geometry>
+		</collision>
+		<collision>
+			<origin xyz="0 -0.03 0.1" rpy="0.291 0 0"/>
+			<geometry>
+				<cylinder radius="0.07" length="0.208"/>
+			</geometry>
+		</collision>
+	</link>
+  
+  <link name="kuka_link_4">
+		<inertial>
+			<mass value="2.35"/>
+			<origin xyz="0. -0.06 0.124" rpy="0. 0. 0."/>
+			<inertia ixx="0.01605833" iyy="0.003525" izz="0.013943" ixy="0." iyz="0." ixz="0."/>
+		</inertial>
+		<visual>
+			<origin xyz="0. 0. 0." rpy="0. 0. 3.1415926535897931"/>
+			<geometry>
+				<mesh filename="meshes/kuka_lwr/link_4.STL"/>
+			</geometry>
+		</visual>
+		<collision>
+		<origin xyz="0 0 0.2" rpy="0 0 0"/>
+		<geometry>
+			<sphere radius="0.07"/>
+		</geometry>
+		</collision>
+		<collision>
+			<origin xyz="0 0.06 0.0" rpy="0 0 0"/>
+			<geometry>
+				<sphere radius="0.07"/>
+			</geometry>
+		</collision>
+		<collision>
+			<origin xyz="0 0.03 0.1" rpy="0.291 0 0"/>
+			<geometry>
+				<cylinder radius="0.07" length="0.208"/>
+			</geometry>
+		</collision>
+	</link>
+
+	<link name="kuka_link_5">
+		<inertial>
+			<mass value="2.35"/>
+			<origin xyz="0. 0. 0.124" rpy="0. 0. 0."/>
+			<inertia ixx="0.01486453" iyy="0.003525" izz="0.01274953" ixy="0." iyz="0." ixz="0."/>
+		</inertial>
+		<visual>
+			<origin xyz="0. 0. -0.008" rpy="0. 0. 3.1415926535897931"/>
+			<geometry>
+				<mesh filename="meshes/kuka_lwr/link_5.STL"/>
+			</geometry>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+			<geometry>
+				<sphere radius="0.07"/>
+			</geometry>
+		</collision>
+		<collision>
+			<origin xyz="0 0.04 0.19" rpy="0 0 0"/>
+			<geometry>
+				<sphere radius="0.07"/>
+			</geometry>
+		</collision>
+		<collision>
+			<origin xyz="0 0.02 0.095" rpy="-0.207 0 0"/>
+			<geometry>
+				<cylinder radius="0.07" length="0.198"/>
+			</geometry>
+		</collision>
+	</link>
+
+	<link name="kuka_link_6">
+		<inertial>
+			<mass value="1.1"/>
+			<origin xyz="0 0 0.0625" rpy="0. 0. 0."/>
+			<inertia ixx="0.002864583" iyy="0.002864583" izz="0.002864583" ixy="0." iyz="0." ixz="0."/>
+		</inertial>
+		<visual>
+			<origin xyz="0. 0. 0." rpy="0. 0. 3.1415926535897931"/>
+			<geometry>
+				<mesh filename="meshes/kuka_lwr/link_6.STL"/>
+			</geometry>
+		</visual>
+		<collision>
+		<origin xyz="0 -0.01 0" rpy="0 0 3.1415926535897931"/>
+		<geometry>
+			<sphere radius="0.08"/>
+		</geometry>
+		</collision>
+	</link>
+
+  	<link name="kuka_link_7">
+		<inertial>
+			<mass value="0.25"/>
+			<origin xyz="0. 0. 0." rpy="0. 0. 0."/>
+			<inertia ixx="0.0004166" iyy="0.0004166" izz="0.000416" ixy="0." iyz="0." ixz="0."/>
+		</inertial>
+		<visual>
+			<origin xyz="0. 0. 0." rpy="0. 0. 3.1415926535897931"/>
+			<geometry>
+				<mesh filename="meshes/kuka_lwr/link_7.STL"/>
+			</geometry>
+		</visual>
+		<collision>
+		<origin xyz="0. 0. 0." rpy="0 0 3.1415926535897931"/>
+		<geometry>
+			<cylinder radius="0.04" length="0.05"/>
+		</geometry>
+		</collision>
+	</link>
+
+</robot>
