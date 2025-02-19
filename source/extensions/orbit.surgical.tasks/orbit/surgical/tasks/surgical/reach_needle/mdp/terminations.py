@@ -42,16 +42,16 @@ def object_goal_reached(
     # Extract the robot and object from the scene using their configurations
     robot: RigidObject = env.scene[robot_cfg.name]
     object: RigidObject = env.scene[object_cfg.name]
-    
+
     # Retrieve the command for the object's desired pose
     command = env.command_manager.get_command(command_name)
-    
+
     # Compute the desired position in the world frame
     des_pos_b = command[:, :3]
     des_pos_w, _ = combine_frame_transforms(robot.data.root_state_w[:, :3], robot.data.root_state_w[:, 3:7], des_pos_b)
-    
+
     # Calculate the distance between the robot's end-effector and the object's current position
     distance = torch.norm(des_pos_w - object.data.root_pos_w[:, :3], dim=1)
-    
+
     # Return a tensor indicating whether the distance is within the threshold
     return distance < threshold

@@ -45,13 +45,12 @@ from rl_games.common import env_configurations, vecenv
 from rl_games.common.player import BasePlayer
 from rl_games.torch_runner import Runner
 
-from omni.isaac.lab.utils.assets import retrieve_file_path
+import orbit.surgical.tasks  # noqa: F401
 
 import omni.isaac.lab_tasks  # noqa: F401
+from omni.isaac.lab.utils.assets import retrieve_file_path
 from omni.isaac.lab_tasks.utils import get_checkpoint_path, load_cfg_from_registry, parse_env_cfg
 from omni.isaac.lab_tasks.utils.wrappers.rl_games import RlGamesGpuEnv, RlGamesVecEnvWrapper
-
-import orbit.surgical.tasks  # noqa: F401
 
 
 def main():

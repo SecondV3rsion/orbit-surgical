@@ -36,10 +36,10 @@ import robomimic  # noqa: F401
 import robomimic.utils.file_utils as FileUtils
 import robomimic.utils.torch_utils as TorchUtils
 
+import orbit.surgical.tasks  # noqa: F401
+
 import omni.isaac.lab_tasks  # noqa: F401
 from omni.isaac.lab_tasks.utils import parse_env_cfg
-
-import orbit.surgical.tasks  # noqa: F401
 
 
 def main():

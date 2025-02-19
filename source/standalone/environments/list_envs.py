@@ -27,9 +27,9 @@ simulation_app = app_launcher.app
 import gymnasium as gym
 from prettytable import PrettyTable
 
-import omni.isaac.lab_tasks  # noqa: F401
-
 import orbit.surgical.tasks  # noqa: F401
+
+import omni.isaac.lab_tasks  # noqa: F401
 
 
 def main():

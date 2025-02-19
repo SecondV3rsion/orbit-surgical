@@ -52,14 +52,13 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.logger import configure
 from stable_baselines3.common.vec_env import VecNormalize
 
-from omni.isaac.lab.utils.dict import print_dict
-from omni.isaac.lab.utils.io import dump_pickle, dump_yaml
+import orbit.surgical.tasks  # noqa: F401
 
 import omni.isaac.lab_tasks  # noqa: F401
+from omni.isaac.lab.utils.dict import print_dict
+from omni.isaac.lab.utils.io import dump_pickle, dump_yaml
 from omni.isaac.lab_tasks.utils import load_cfg_from_registry, parse_env_cfg
 from omni.isaac.lab_tasks.utils.wrappers.sb3 import Sb3VecEnvWrapper, process_sb3_cfg
-
-import orbit.surgical.tasks  # noqa: F401
 
 
 def main():

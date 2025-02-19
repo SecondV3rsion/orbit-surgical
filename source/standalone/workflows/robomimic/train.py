@@ -71,10 +71,10 @@ from robomimic.algo import RolloutPolicy, algo_factory
 from robomimic.config import config_factory
 from robomimic.utils.log_utils import DataLogger, PrintLogger
 
+import orbit.surgical.tasks  # noqa: F401
+
 # Needed so that environment is registered
 import omni.isaac.lab_tasks  # noqa: F401
-
-import orbit.surgical.tasks  # noqa: F401
 
 
 def train(config, device):

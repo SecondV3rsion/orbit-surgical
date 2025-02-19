@@ -156,7 +156,7 @@ class Se3KeyboardDualArm(DeviceBase):
             np.concatenate([self._delta_pos_0, rot_vec_0]),
             self._close_gripper_0,
             np.concatenate([self._delta_pos_1, rot_vec_1]),
-            self._close_gripper_1
+            self._close_gripper_1,
         )
 
     """

@@ -41,6 +41,8 @@ import torch
 
 from rsl_rl.runners import OnPolicyRunner
 
+import orbit.surgical.tasks  # noqa: F401
+
 import omni.isaac.lab_tasks  # noqa: F401
 from omni.isaac.lab_tasks.utils import get_checkpoint_path, parse_env_cfg
 from omni.isaac.lab_tasks.utils.wrappers.rsl_rl import (
@@ -49,8 +51,6 @@ from omni.isaac.lab_tasks.utils.wrappers.rsl_rl import (
     export_policy_as_jit,
     export_policy_as_onnx,
 )
-
-import orbit.surgical.tasks  # noqa: F401
 
 
 def main():

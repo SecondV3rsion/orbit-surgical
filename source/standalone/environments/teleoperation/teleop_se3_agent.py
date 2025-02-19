@@ -36,13 +36,13 @@ import gymnasium as gym
 import torch
 
 import carb
-
-from omni.isaac.lab.devices import Se3Gamepad, Se3Keyboard, Se3SpaceMouse
-import omni.isaac.lab_tasks  # noqa: F401
-from omni.isaac.lab_tasks.utils import parse_env_cfg
-
 from orbit.surgical.ext.devices import Se3KeyboardDualArm
+
 import orbit.surgical.tasks  # noqa: F401
+
+import omni.isaac.lab_tasks  # noqa: F401
+from omni.isaac.lab.devices import Se3Gamepad, Se3Keyboard, Se3SpaceMouse
+from omni.isaac.lab_tasks.utils import parse_env_cfg
 
 
 def pre_process_actions(delta_pose: torch.Tensor, gripper_command: bool) -> torch.Tensor:
@@ -58,6 +58,7 @@ def pre_process_actions(delta_pose: torch.Tensor, gripper_command: bool) -> torc
         gripper_vel[:] = -1.0 if gripper_command else 1.0
         # compute actions
         return torch.concat([delta_pose, gripper_vel], dim=1)
+
 
 def process_actions(teleop_interface, env, is_dual) -> torch.Tensor:
     """Process actions for the environment."""

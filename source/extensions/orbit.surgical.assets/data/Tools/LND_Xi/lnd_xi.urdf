@@ -45,7 +45,7 @@
         </geometry>
       </collision>
     </link>
-    
+
     <joint name="lnd_main_insertion_joint_3" type="fixed">
       <origin xyz="0. 0. -0.61421" rpy="0. 0. 1.5707963"/>
       <parent link="lnd_base_link"/>
@@ -186,7 +186,7 @@
       <parent link="lnd_tool_yaw_link"/>
       <child link="lnd_tool_gripper1_link"/>
       <axis xyz="1. 0. 0."/>
-      <limit lower="-0.5235988" upper="0." effort="1200." velocity="2.0999999"/>  
+      <limit lower="-0.5235988" upper="0." effort="1200." velocity="2.0999999"/>
     </joint>
 
     <link name="lnd_tool_gripper1_link">
@@ -208,7 +208,7 @@
         </geometry>
       </collision>
     </link>
-     
+
     <joint name="lnd_tool_gripper2_joint" type="revolute">
       <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
       <parent link="lnd_tool_yaw_link"/>

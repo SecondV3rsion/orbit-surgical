@@ -32,10 +32,10 @@ simulation_app = app_launcher.app
 import gymnasium as gym
 import torch
 
+import orbit.surgical.tasks  # noqa: F401
+
 import omni.isaac.lab_tasks  # noqa: F401
 from omni.isaac.lab_tasks.utils import parse_env_cfg
-
-import orbit.surgical.tasks  # noqa: F401
 
 
 def main():

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<robot name="kuka_lwr"> 
-	
+<robot name="kuka_lwr">
+
 	<!-- URDF model /-->
-	
-	
+
+
 <!--               JOINTS                -->
-    
+
   <joint name="root_joint" type="fixed">
     <origin xyz="0. 0. 0." rpy="0. 0. 0."/>
     <parent link="kuka_lwr"/>
@@ -70,7 +70,7 @@
 
 
   <!--               LINKS                -->
-  
+
   <link name="kuka_lwr"/>
 
   <link name="kuka_link_0">
@@ -188,7 +188,7 @@
 			</geometry>
 		</collision>
 	</link>
-  
+
   <link name="kuka_link_4">
 		<inertial>
 			<mass value="2.35"/>

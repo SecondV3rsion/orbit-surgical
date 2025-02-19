@@ -14,11 +14,11 @@ Reference: https://github.com/med-air/SurRoL
            https://github.com/WPI-AIM/dvrk_env
 """
 
+from orbit.surgical.assets import ORBITSURGICAL_ASSETS_DATA_DIR
+
 import omni.isaac.lab.sim as sim_utils
 from omni.isaac.lab.actuators import ImplicitActuatorCfg
 from omni.isaac.lab.assets.articulation import ArticulationCfg
-
-from orbit.surgical.assets import ORBITSURGICAL_ASSETS_DATA_DIR
 
 ##
 # Configuration

@@ -5,15 +5,15 @@
 
 from orbit.surgical.assets import ORBITSURGICAL_ASSETS_DATA_DIR
 
+from orbit.surgical.tasks.surgical.lift import mdp
+from orbit.surgical.tasks.surgical.lift.lift_env_cfg import LiftEnvCfg
+
 from omni.isaac.lab.assets import RigidObjectCfg
 from omni.isaac.lab.sensors import FrameTransformerCfg
 from omni.isaac.lab.sensors.frame_transformer.frame_transformer_cfg import OffsetCfg
 from omni.isaac.lab.sim.schemas.schemas_cfg import RigidBodyPropertiesCfg
 from omni.isaac.lab.sim.spawners.from_files.from_files_cfg import UsdFileCfg
 from omni.isaac.lab.utils import configclass
-
-from orbit.surgical.tasks.surgical.lift import mdp
-from orbit.surgical.tasks.surgical.lift.lift_env_cfg import LiftEnvCfg
 
 ##
 # Pre-defined configs

@@ -11,9 +11,7 @@ from typing import TYPE_CHECKING
 from omni.isaac.lab.assets import RigidObject
 from omni.isaac.lab.managers import SceneEntityCfg
 from omni.isaac.lab.sensors import FrameTransformer
-from omni.isaac.lab.utils.math import combine_frame_transforms
 from omni.isaac.lab.utils.math import combine_frame_transforms, quat_error_magnitude, quat_mul
-
 
 if TYPE_CHECKING:
     from omni.isaac.lab.envs import ManagerBasedRLEnv
@@ -37,6 +35,7 @@ def object_ee_distance(
     object_ee_distance = torch.norm(cube_pos_w - ee_w, dim=1)
 
     return 1 - torch.tanh(object_ee_distance / std)
+
 
 def object_goal_distance(
     env: ManagerBasedRLEnv,

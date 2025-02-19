@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import numpy as np
 from dataclasses import MISSING
 
 from orbit.surgical.assets import ORBITSURGICAL_ASSETS_DATA_DIR
@@ -22,7 +23,6 @@ from omni.isaac.lab.sensors.frame_transformer.frame_transformer_cfg import Frame
 from omni.isaac.lab.sim.spawners.from_files.from_files_cfg import GroundPlaneCfg, UsdFileCfg
 from omni.isaac.lab.utils import configclass
 
-import numpy as np
 from . import mdp
 
 ##
@@ -47,7 +47,7 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
     # Table
     table = AssetBaseCfg(
         prim_path="{ENV_REGEX_NS}/Table",
-        init_state=AssetBaseCfg.InitialStateCfg(pos=(0.5, 0.0, -0.457),rot=(0.7071068, 0, 0, 0.7071068)),
+        init_state=AssetBaseCfg.InitialStateCfg(pos=(0.5, 0.0, -0.457), rot=(0.7071068, 0, 0, 0.7071068)),
         spawn=UsdFileCfg(usd_path=f"{ORBITSURGICAL_ASSETS_DATA_DIR}/Props/Table/table.usd"),
     )
 
@@ -83,8 +83,8 @@ class CommandsCfg:
             pos_x=(-0.8, -0.7),
             pos_y=(0.6, 0.8),
             pos_z=(-0.1, 0.1),
-            roll=(-np.pi/2, -np.pi/2),
-            pitch=(-np.pi/4, np.pi/4),
+            roll=(-np.pi / 2, -np.pi / 2),
+            pitch=(-np.pi / 4, np.pi / 4),
             yaw=(0.0, 0.0),
         ),
     )
@@ -144,16 +144,13 @@ class RewardsCfg:
 
     # Primary reward: encourage reaching the needle
     reaching_object = RewTerm(
-        func=mdp.object_ee_distance, 
+        func=mdp.object_ee_distance,
         params={"std": 0.1},  # Standard deviation to shape the reward function
-        weight=50.0  # Increase the weight to prioritize reaching
+        weight=50.0,  # Increase the weight to prioritize reaching
     )
 
     # Penalty for high action rates to prevent jerky movements
-    action_rate = RewTerm(
-        func=mdp.action_rate_l2, 
-        weight=-1e-3  # Slight penalty to smooth out actions
-    )
+    action_rate = RewTerm(func=mdp.action_rate_l2, weight=-1e-3)  # Slight penalty to smooth out actions
 
     # Penalty for high joint velocities to avoid sudden movements
     joint_vel = RewTerm(
@@ -172,9 +169,10 @@ class TerminationsCfg:
 
     # Terminate when the robot successfully reaches the needle
     reach_goal = DoneTerm(
-        func=mdp.object_goal_reached, 
-        params={"threshold": 0.02}  # Adjust the threshold to determine when the needle is considered 'reached'
+        func=mdp.object_goal_reached,
+        params={"threshold": 0.02},  # Adjust the threshold to determine when the needle is considered 'reached'
     )
+
 
 @configclass
 class CurriculumCfg:
@@ -182,14 +180,12 @@ class CurriculumCfg:
 
     # Gradually reduce penalty on action rate to encourage smoother movements
     action_rate = CurrTerm(
-        func=mdp.modify_reward_weight, 
-        params={"term_name": "action_rate", "weight": -5e-3, "num_steps": 5000}
+        func=mdp.modify_reward_weight, params={"term_name": "action_rate", "weight": -5e-3, "num_steps": 5000}
     )
 
     # Gradually reduce penalty on joint velocity to allow more flexibility as learning progresses
     joint_vel = CurrTerm(
-        func=mdp.modify_reward_weight, 
-        params={"term_name": "joint_vel", "weight": -2e-3, "num_steps": 5000}
+        func=mdp.modify_reward_weight, params={"term_name": "joint_vel", "weight": -2e-3, "num_steps": 5000}
     )
 
 

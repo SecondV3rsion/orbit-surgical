@@ -44,6 +44,7 @@ def object_ee_distance(
 
     return 1 - torch.tanh(object_ee_distance / std)
 
+
 def object_goal_distance(
     env: ManagerBasedRLEnv,
     std: float,
@@ -66,4 +67,4 @@ def object_goal_distance(
     return (object.data.root_pos_w[:, 2] > minimal_height) * (1 - torch.tanh(distance / std))
 
 
-  # Reward if z-axis points to object
+# Reward if z-axis points to object

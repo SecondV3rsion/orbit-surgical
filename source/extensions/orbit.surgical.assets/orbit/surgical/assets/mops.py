@@ -6,11 +6,11 @@ The following configurations are available:
 
 """
 
+from orbit.surgical.assets import ORBITSURGICAL_ASSETS_DATA_DIR
+
 import omni.isaac.lab.sim as sim_utils
 from omni.isaac.lab.actuators import ImplicitActuatorCfg
 from omni.isaac.lab.assets.articulation import ArticulationCfg
-
-from orbit.surgical.assets import ORBITSURGICAL_ASSETS_DATA_DIR
 
 ##
 # Configuration
@@ -70,17 +70,17 @@ MOPS_CFG = ArticulationCfg(
                 "kuka_joint_5",
                 "kuka_joint_6",
             ],
-            effort_limit=300.0,  
+            effort_limit=300.0,
             velocity_limit=3.21,
-            stiffness=800.0,   
-            damping=40.0,      
+            stiffness=800.0,
+            damping=40.0,
         ),
         "kuka_7": ImplicitActuatorCfg(
             joint_names_expr=["kuka_joint_7"],
-            effort_limit=12.0, 
-            velocity_limit=3.2, 
-            stiffness=300.0,    
-            damping=30.0,        
+            effort_limit=12.0,
+            velocity_limit=3.2,
+            stiffness=300.0,
+            damping=30.0,
         ),
         "lnd": ImplicitActuatorCfg(
             joint_names_expr=[

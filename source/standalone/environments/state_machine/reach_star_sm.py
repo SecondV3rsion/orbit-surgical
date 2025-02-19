@@ -44,14 +44,12 @@ from collections.abc import Sequence
 
 import warp as wp
 
-from omni.isaac.lab.assets import RigidObject
-
-from omni.isaac.lab_tasks.utils.parse_cfg import parse_env_cfg
-
-from omni.isaac.lab.utils.math import subtract_frame_transforms
-
 import orbit.surgical.tasks  # noqa: F401
 from orbit.surgical.tasks.surgical.reach.reach_env_cfg import ReachEnvCfg
+
+from omni.isaac.lab.assets import RigidObject
+from omni.isaac.lab.utils.math import subtract_frame_transforms
+from omni.isaac.lab_tasks.utils.parse_cfg import parse_env_cfg
 
 # initialize warp
 wp.init()

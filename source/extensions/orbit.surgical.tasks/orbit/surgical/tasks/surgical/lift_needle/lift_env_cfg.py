@@ -1,3 +1,4 @@
+import numpy as np
 from dataclasses import MISSING
 
 from orbit.surgical.assets import ORBITSURGICAL_ASSETS_DATA_DIR
@@ -18,7 +19,6 @@ from omni.isaac.lab.sim.spawners.from_files.from_files_cfg import GroundPlaneCfg
 from omni.isaac.lab.utils import configclass
 
 from . import mdp
-import numpy as np
 
 ##
 # Scene definition
@@ -42,13 +42,8 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
     # Table
     table = AssetBaseCfg(
         prim_path="{ENV_REGEX_NS}/Table",
-        init_state=AssetBaseCfg.InitialStateCfg(
-            pos=(0.5, 0.0, -0.457),
-            rot=(0.7071068, 0, 0, 0.7071068)
-        ),
-        spawn=UsdFileCfg(
-            usd_path=f"{ORBITSURGICAL_ASSETS_DATA_DIR}/Props/Table/table.usd"
-        ),
+        init_state=AssetBaseCfg.InitialStateCfg(pos=(0.5, 0.0, -0.457), rot=(0.7071068, 0, 0, 0.7071068)),
+        spawn=UsdFileCfg(usd_path=f"{ORBITSURGICAL_ASSETS_DATA_DIR}/Props/Table/table.usd"),
     )
 
     # plane
@@ -143,18 +138,10 @@ class RewardsCfg:
     """Reward terms for the MDP."""
 
     # Encourage reaching the object
-    reaching_object = RewTerm(
-        func=mdp.object_ee_distance, 
-        params={"std": 0.1}, 
-        weight=10.0
-    )
+    reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.1}, weight=10.0)
 
     # Encourage lifting the object above a certain height
-    lifting_object = RewTerm(
-        func=mdp.object_is_lifted, 
-        params={"minimal_height": 0.03}, 
-        weight=15.0
-    )
+    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.03}, weight=15.0)
 
     # Reward for moving towards the target pose
     object_goal_tracking = RewTerm(
@@ -190,15 +177,11 @@ class TerminationsCfg:
 
     # Terminate if the object falls below a certain height
     object_dropping = DoneTerm(
-        func=mdp.root_height_below_minimum, 
-        params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("object")}
+        func=mdp.root_height_below_minimum, params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("object")}
     )
 
     # Terminate when the object is lifted and reaches a goal height
-    object_lifted = DoneTerm(
-        func=mdp.object_reached_goal, 
-        params={"threshold": 0.1}
-    )
+    object_lifted = DoneTerm(func=mdp.object_reached_goal, params={"threshold": 0.1})
 
 
 @configclass
@@ -207,14 +190,12 @@ class CurriculumCfg:
 
     # Increase penalty for action rate gradually
     action_rate = CurrTerm(
-        func=mdp.modify_reward_weight, 
-        params={"term_name": "action_rate", "weight": -1e-1, "num_steps": 10000}
+        func=mdp.modify_reward_weight, params={"term_name": "action_rate", "weight": -1e-1, "num_steps": 10000}
     )
 
     # Increase penalty for joint velocities gradually
     joint_vel = CurrTerm(
-        func=mdp.modify_reward_weight, 
-        params={"term_name": "joint_vel", "weight": -1e-1, "num_steps": 10000}
+        func=mdp.modify_reward_weight, params={"term_name": "joint_vel", "weight": -1e-1, "num_steps": 10000}
     )
 
 

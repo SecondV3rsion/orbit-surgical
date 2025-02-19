@@ -4,14 +4,14 @@ import math
 
 from orbit.surgical.assets import ORBITSURGICAL_ASSETS_DATA_DIR
 
+import orbit.surgical.tasks.surgical.reach.mdp as mdp
+from orbit.surgical.tasks.surgical.reach.reach_env_cfg import ReachEnvCfg
+
 import omni.isaac.lab.sim as sim_utils
 from omni.isaac.lab.assets import AssetBaseCfg
 from omni.isaac.lab.managers import EventTermCfg as EventTerm
 from omni.isaac.lab.sensors import FrameTransformerCfg
 from omni.isaac.lab.utils import configclass
-
-import orbit.surgical.tasks.surgical.reach.mdp as mdp
-from orbit.surgical.tasks.surgical.reach.reach_env_cfg import ReachEnvCfg
 
 ##
 # Pre-defined configs
@@ -39,8 +39,7 @@ class MOPSReachEnvCfg(ReachEnvCfg):
             spawn=sim_utils.UsdFileCfg(
                 usd_path=f"{ORBITSURGICAL_ASSETS_DATA_DIR}/Props/Table/table.usd",
             ),
-            init_state=AssetBaseCfg.InitialStateCfg(pos=(0.5, 0.0, -0.457),
-                                                    rot=(0.7071068, 0, 0, 0.7071068)),
+            init_state=AssetBaseCfg.InitialStateCfg(pos=(0.5, 0.0, -0.457), rot=(0.7071068, 0, 0, 0.7071068)),
         )
 
         # switch robot to MOPS
@@ -77,8 +76,8 @@ class MOPSReachEnvCfg(ReachEnvCfg):
                 pos_x=(-0.8, -0.7),
                 pos_y=(0.6, 0.8),
                 pos_z=(-0.1, 0.1),
-                roll=(-math.pi/2, -math.pi/2),
-                pitch=(-math.pi/4, math.pi/4),
+                roll=(-math.pi / 2, -math.pi / 2),
+                pitch=(-math.pi / 4, math.pi / 4),
                 yaw=(0.0, 0.0),
             ),
         )
@@ -91,7 +90,7 @@ class MOPSReachEnvCfg(ReachEnvCfg):
                 "velocity_range": (0.0, 0.0),
             },
         )
-        
+
         # Listens to the required transforms
         marker_cfg = FRAME_MARKER_CFG.copy()
         marker_cfg.markers["frame"].scale = (0.1, 0.1, 0.1)
