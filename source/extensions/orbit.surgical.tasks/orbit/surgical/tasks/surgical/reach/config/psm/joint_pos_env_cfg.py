@@ -81,9 +81,6 @@ class PSMReachEnvCfg(ReachEnvCfg):
                 yaw=(0.0, 0.0),
             ),
         )
-        # set the scale of the visualization markers to (0.01, 0.01, 0.01)
-        self.commands.ee_pose.goal_pose_visualizer_cfg.markers["frame"].scale = (0.01, 0.01, 0.01)
-        self.commands.ee_pose.current_pose_visualizer_cfg.markers["frame"].scale = (0.01, 0.01, 0.01)
 
         self.events.reset_robot_joints = EventTerm(
             func=mdp.reset_joints_by_scale,
