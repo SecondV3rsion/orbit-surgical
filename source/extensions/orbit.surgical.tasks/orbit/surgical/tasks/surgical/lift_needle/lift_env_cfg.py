@@ -1,8 +1,3 @@
-# Copyright (c) 2024, The ORBIT-Surgical Project Developers.
-# All rights reserved.
-#
-# SPDX-License-Identifier: BSD-3-Clause
-
 from dataclasses import MISSING
 
 from orbit.surgical.assets import ORBITSURGICAL_ASSETS_DATA_DIR
@@ -23,6 +18,7 @@ from omni.isaac.lab.sim.spawners.from_files.from_files_cfg import GroundPlaneCfg
 from omni.isaac.lab.utils import configclass
 
 from . import mdp
+import numpy as np
 
 ##
 # Scene definition
@@ -31,9 +27,9 @@ from . import mdp
 
 @configclass
 class ObjectTableSceneCfg(InteractiveSceneCfg):
-    """Configuration for the lift scene with a robot and a object.
+    """Configuration for the lift scene with a robot and an object.
     This is the abstract base implementation, the exact scene is defined in the derived classes
-    which need to set the target object, robot and end-effector frames
+    which need to set the target object, robot, and end-effector frames.
     """
 
     # robots: will be populated by agent env cfg
@@ -46,8 +42,13 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
     # Table
     table = AssetBaseCfg(
         prim_path="{ENV_REGEX_NS}/Table",
-        init_state=AssetBaseCfg.InitialStateCfg(pos=(0.5, 0.0, -0.457),rot=(0.7071068, 0, 0, 0.7071068)),
-        spawn=UsdFileCfg(usd_path=f"{ORBITSURGICAL_ASSETS_DATA_DIR}/Props/Table/table.usd"),
+        init_state=AssetBaseCfg.InitialStateCfg(
+            pos=(0.5, 0.0, -0.457),
+            rot=(0.7071068, 0, 0, 0.7071068)
+        ),
+        spawn=UsdFileCfg(
+            usd_path=f"{ORBITSURGICAL_ASSETS_DATA_DIR}/Props/Table/table.usd"
+        ),
     )
 
     # plane
@@ -79,11 +80,11 @@ class CommandsCfg:
         resampling_time_range=(1.0, 1.0),
         debug_vis=False,
         ranges=mdp.UniformPoseCommandCfg.Ranges(
-            pos_x=(-0.05, 0.05),
-            pos_y=(-0.05, 0.05),
-            pos_z=(-0.12, -0.12),
-            roll=(0.0, 0.0),
-            pitch=(0.0, 0.0),
+            pos_x=(-0.8, -0.7),
+            pos_y=(0.6, 0.8),
+            pos_z=(-0.1, 0.1),
+            roll=(-np.pi / 2, -np.pi / 2),
+            pitch=(-np.pi / 4, np.pi / 4),
             yaw=(0.0, 0.0),
         ),
     )
@@ -141,25 +142,38 @@ class EventCfg:
 class RewardsCfg:
     """Reward terms for the MDP."""
 
-    reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.1}, weight=10.0)
+    # Encourage reaching the object
+    reaching_object = RewTerm(
+        func=mdp.object_ee_distance, 
+        params={"std": 0.1}, 
+        weight=10.0
+    )
 
-    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.03}, weight=15.0)
+    # Encourage lifting the object above a certain height
+    lifting_object = RewTerm(
+        func=mdp.object_is_lifted, 
+        params={"minimal_height": 0.03}, 
+        weight=15.0
+    )
 
+    # Reward for moving towards the target pose
     object_goal_tracking = RewTerm(
         func=mdp.object_goal_distance,
         params={"std": 0.3, "minimal_height": 0.03, "command_name": "object_pose"},
         weight=16.0,
     )
 
+    # Fine-grained reward for precise goal tracking
     object_goal_tracking_fine_grained = RewTerm(
         func=mdp.object_goal_distance,
         params={"std": 0.05, "minimal_height": 0.03, "command_name": "object_pose"},
         weight=5.0,
     )
 
-    # action penalty
+    # Penalty for rapid or large movements
     action_rate = RewTerm(func=mdp.action_rate_l2, weight=-1e-3)
 
+    # Penalty for high joint velocities
     joint_vel = RewTerm(
         func=mdp.joint_vel_l2,
         weight=-1e-4,
@@ -171,25 +185,36 @@ class RewardsCfg:
 class TerminationsCfg:
     """Termination terms for the MDP."""
 
+    # Timeout for the episode
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
 
+    # Terminate if the object falls below a certain height
     object_dropping = DoneTerm(
-        func=mdp.root_height_below_minimum, params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("object")}
+        func=mdp.root_height_below_minimum, 
+        params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("object")}
     )
 
-    object_lifted = DoneTerm(func=mdp.object_reached_goal, params={"threshold": 0.1})
+    # Terminate when the object is lifted and reaches a goal height
+    object_lifted = DoneTerm(
+        func=mdp.object_reached_goal, 
+        params={"threshold": 0.1}
+    )
 
 
 @configclass
 class CurriculumCfg:
     """Curriculum terms for the MDP."""
 
+    # Increase penalty for action rate gradually
     action_rate = CurrTerm(
-        func=mdp.modify_reward_weight, params={"term_name": "action_rate", "weight": -1e-1, "num_steps": 10000}
+        func=mdp.modify_reward_weight, 
+        params={"term_name": "action_rate", "weight": -1e-1, "num_steps": 10000}
     )
 
+    # Increase penalty for joint velocities gradually
     joint_vel = CurrTerm(
-        func=mdp.modify_reward_weight, params={"term_name": "joint_vel", "weight": -1e-1, "num_steps": 10000}
+        func=mdp.modify_reward_weight, 
+        params={"term_name": "joint_vel", "weight": -1e-1, "num_steps": 10000}
     )
 
 
@@ -203,7 +228,7 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the lifting environment."""
 
     # Scene settings
-    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=4096, env_spacing=2.5)
+    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=512, env_spacing=2.5)
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()

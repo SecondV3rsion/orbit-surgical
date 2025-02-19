@@ -74,9 +74,9 @@ class MOPSReachEnvCfg(ReachEnvCfg):
             resampling_time_range=(4.0, 4.0),
             debug_vis=True,
             ranges=mdp.UniformPoseCommandCfg.Ranges(
-                pos_x=(-0.6, -0.5),
-                pos_y=(0.8, 0.9),
-                pos_z=(-0.1, 0.2),
+                pos_x=(-0.8, -0.7),
+                pos_y=(0.6, 0.8),
+                pos_z=(-0.1, 0.1),
                 roll=(-math.pi/2, -math.pi/2),
                 pitch=(-math.pi/4, math.pi/4),
                 yaw=(0.0, 0.0),

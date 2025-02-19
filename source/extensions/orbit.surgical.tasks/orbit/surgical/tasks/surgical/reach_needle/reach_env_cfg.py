@@ -22,6 +22,7 @@ from omni.isaac.lab.sensors.frame_transformer.frame_transformer_cfg import Frame
 from omni.isaac.lab.sim.spawners.from_files.from_files_cfg import GroundPlaneCfg, UsdFileCfg
 from omni.isaac.lab.utils import configclass
 
+import numpy as np
 from . import mdp
 
 ##
@@ -79,11 +80,11 @@ class CommandsCfg:
         resampling_time_range=(1.0, 1.0),
         debug_vis=False,
         ranges=mdp.UniformPoseCommandCfg.Ranges(
-            pos_x=(-0.05, 0.05),
-            pos_y=(-0.05, 0.05),
-            pos_z=(-0.12, -0.12),
-            roll=(0.0, 0.0),
-            pitch=(0.0, 0.0),
+            pos_x=(-0.8, -0.7),
+            pos_y=(0.6, 0.8),
+            pos_z=(-0.1, 0.1),
+            roll=(-np.pi/2, -np.pi/2),
+            pitch=(-np.pi/4, np.pi/4),
             yaw=(0.0, 0.0),
         ),
     )
@@ -141,15 +142,23 @@ class EventCfg:
 class RewardsCfg:
     """Reward terms for the MDP."""
 
-    # Increase the weight to prioritize reaching the needle
-    reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.05}, weight=25.0)
+    # Primary reward: encourage reaching the needle
+    reaching_object = RewTerm(
+        func=mdp.object_ee_distance, 
+        params={"std": 0.1},  # Standard deviation to shape the reward function
+        weight=50.0  # Increase the weight to prioritize reaching
+    )
 
-    # Slightly increase penalties to discourage unnecessary movements
-    action_rate = RewTerm(func=mdp.action_rate_l2, weight=-2e-3)
+    # Penalty for high action rates to prevent jerky movements
+    action_rate = RewTerm(
+        func=mdp.action_rate_l2, 
+        weight=-1e-3  # Slight penalty to smooth out actions
+    )
 
+    # Penalty for high joint velocities to avoid sudden movements
     joint_vel = RewTerm(
         func=mdp.joint_vel_l2,
-        weight=-5e-4,
+        weight=-1e-3,  # Slight penalty to ensure smooth joint motion
         params={"asset_cfg": SceneEntityCfg("robot")},
     )
 
@@ -158,28 +167,29 @@ class RewardsCfg:
 class TerminationsCfg:
     """Termination terms for the MDP."""
 
-    # Existing timeout condition
+    # Terminate after a fixed number of steps
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
 
-    # New condition to terminate when the needle is reached
+    # Terminate when the robot successfully reaches the needle
     reach_goal = DoneTerm(
         func=mdp.object_goal_reached, 
-        params={"threshold": 0.01}
+        params={"threshold": 0.02}  # Adjust the threshold to determine when the needle is considered 'reached'
     )
-
-
-
 
 @configclass
 class CurriculumCfg:
     """Curriculum terms for the MDP."""
 
+    # Gradually reduce penalty on action rate to encourage smoother movements
     action_rate = CurrTerm(
-        func=mdp.modify_reward_weight, params={"term_name": "action_rate", "weight": -1e-1, "num_steps": 10000}
+        func=mdp.modify_reward_weight, 
+        params={"term_name": "action_rate", "weight": -5e-3, "num_steps": 5000}
     )
 
+    # Gradually reduce penalty on joint velocity to allow more flexibility as learning progresses
     joint_vel = CurrTerm(
-        func=mdp.modify_reward_weight, params={"term_name": "joint_vel", "weight": -1e-1, "num_steps": 10000}
+        func=mdp.modify_reward_weight, 
+        params={"term_name": "joint_vel", "weight": -2e-3, "num_steps": 5000}
     )
 
 
@@ -193,7 +203,7 @@ class ReachEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the reaching environment."""
 
     # Scene settings
-    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=4096, env_spacing=2.5)
+    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=512, env_spacing=2.5)
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()
