@@ -3,14 +3,15 @@
 The following configurations are available:
 
 * :obj:`MOPS_CFG`: Kuka robot arm + Lnd Xi tool
+* :obj:`MOPS_HIGH_PD_CFG`: Kuka robot arm + Lnd Xi tool with stiffer PD control
 
 """
 
 from orbit.surgical.assets import ORBITSURGICAL_ASSETS_DATA_DIR
 
-import omni.isaac.lab.sim as sim_utils
-from omni.isaac.lab.actuators import ImplicitActuatorCfg
-from omni.isaac.lab.assets.articulation import ArticulationCfg
+import isaaclab.sim as sim_utils
+from isaaclab.actuators import ImplicitActuatorCfg
+from isaaclab.assets.articulation import ArticulationCfg
 
 ##
 # Configuration
@@ -29,20 +30,6 @@ MOPS_CFG = ArticulationCfg(
         ),
     ),
     init_state=ArticulationCfg.InitialStateCfg(
-        joint_vel={
-            "kuka_joint_1": 0.0,
-            "kuka_joint_2": 0.0,
-            "kuka_joint_3": 0.0,
-            "kuka_joint_4": 0.0,
-            "kuka_joint_5": 0.0,
-            "kuka_joint_6": 0.0,
-            "kuka_joint_7": 0.0,
-            "lnd_tool_roll_joint": 0.0,
-            "lnd_tool_pitch_joint": 0.0,
-            "lnd_tool_yaw_joint": 0.0,
-            "lnd_tool_gripper1_joint": 0.0,
-            "lnd_tool_gripper2_joint": 0.0,
-        },
         joint_pos={
             "kuka_joint_1": -0.4,
             "kuka_joint_2": 1.2,
@@ -72,15 +59,11 @@ MOPS_CFG = ArticulationCfg(
             ],
             effort_limit=300.0,
             velocity_limit=3.21,
-            stiffness=800.0,
-            damping=40.0,
         ),
         "kuka_7": ImplicitActuatorCfg(
             joint_names_expr=["kuka_joint_7"],
             effort_limit=12.0,
             velocity_limit=3.2,
-            stiffness=300.0,
-            damping=30.0,
         ),
         "lnd": ImplicitActuatorCfg(
             joint_names_expr=[
