@@ -17,7 +17,7 @@ from . import agents, ik_abs_env_cfg, ik_rel_env_cfg, joint_pos_env_cfg
 
 gym.register(
     id="Isaac-Reach-MOPS-v0",
-    entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": joint_pos_env_cfg.MOPSReachEnvCfg,
@@ -27,7 +27,7 @@ gym.register(
 
 gym.register(
     id="Isaac-Reach-MOPS-Play-v0",
-    entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": joint_pos_env_cfg.MOPSReachEnvCfg_PLAY,
@@ -41,7 +41,7 @@ gym.register(
 
 gym.register(
     id="Isaac-Reach-MOPS-IK-Abs-v0",
-    entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
     kwargs={
         "env_cfg_entry_point": ik_abs_env_cfg.MOPSReachEnvCfg,
         "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.MOPSReachPPORunnerCfg,
@@ -51,7 +51,7 @@ gym.register(
 
 gym.register(
     id="Isaac-Reach-MOPS-IK-Abs-Play-v0",
-    entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
     kwargs={
         "env_cfg_entry_point": ik_abs_env_cfg.MOPSReachEnvCfg_PLAY,
         "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.MOPSReachPPORunnerCfg,
@@ -65,7 +65,7 @@ gym.register(
 
 gym.register(
     id="Isaac-Reach-MOPS-IK-Rel-v0",
-    entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
     kwargs={
         "env_cfg_entry_point": ik_rel_env_cfg.MOPSReachEnvCfg,
         "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.MOPSReachPPORunnerCfg,
@@ -75,7 +75,7 @@ gym.register(
 
 gym.register(
     id="Isaac-Reach-MOPS-IK-Rel-Play-v0",
-    entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
     kwargs={
         "env_cfg_entry_point": ik_rel_env_cfg.MOPSReachEnvCfg_PLAY,
         "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.MOPSReachPPORunnerCfg,
