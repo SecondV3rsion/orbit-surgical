@@ -8,9 +8,9 @@ The following configurations are available:
 
 from orbit.surgical.assets import ORBITSURGICAL_ASSETS_DATA_DIR
 
-import omni.isaac.lab.sim as sim_utils
-from omni.isaac.lab.actuators import ImplicitActuatorCfg
-from omni.isaac.lab.assets.articulation import ArticulationCfg
+import isaaclab.sim as sim_utils
+from isaaclab.actuators import ImplicitActuatorCfg
+from isaaclab.assets.articulation import ArticulationCfg
 
 ##
 # Configuration

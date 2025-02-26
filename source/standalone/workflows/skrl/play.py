@@ -15,7 +15,7 @@ a more user-friendly way.
 
 import argparse
 
-from omni.isaac.lab.app import AppLauncher
+from isaaclab.app import AppLauncher
 
 # add argparse arguments
 parser = argparse.ArgumentParser(description="Play a checkpoint of an RL agent from skrl.")
@@ -45,9 +45,9 @@ from skrl.utils.model_instantiators.torch import deterministic_model, gaussian_m
 
 import orbit.surgical.tasks  # noqa: F401
 
-import omni.isaac.lab_tasks  # noqa: F401
-from omni.isaac.lab_tasks.utils import get_checkpoint_path, load_cfg_from_registry, parse_env_cfg
-from omni.isaac.lab_tasks.utils.wrappers.skrl import SkrlVecEnvWrapper, process_skrl_cfg
+import isaaclab_tasks  # noqa: F401
+from isaaclab_tasks.utils import get_checkpoint_path, load_cfg_from_registry, parse_env_cfg
+from isaaclab_rl.skrl import SkrlVecEnvWrapper, process_skrl_cfg
 
 
 def main():
