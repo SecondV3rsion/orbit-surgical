@@ -12,10 +12,22 @@ from orbit.surgical.assets import ORBITSURGICAL_ASSETS_DATA_DIR
 import isaaclab.sim as sim_utils
 from isaaclab.actuators import ImplicitActuatorCfg
 from isaaclab.assets.articulation import ArticulationCfg
+from isaaclab.utils.math import quat_from_euler_xyz
+import torch
 
 ##
 # Configuration
 ##
+
+# Given real-world position
+world_to_base_pos = [0, -0.0765, 0.92]
+
+# Given real-world RPY (roll, pitch, yaw) in radians
+world_to_base_rpy = torch.tensor([-1.1224, 0.3337, -2.6655]) 
+
+# Convert RPY to quaternion (expects separate roll, pitch, yaw)
+world_to_base_quat = quat_from_euler_xyz(world_to_base_rpy[0], world_to_base_rpy[1], world_to_base_rpy[2])
+
 
 initial_joint_positions = {
     "kuka_joint_1": -0.4,
@@ -47,8 +59,8 @@ MOPS_CFG = ArticulationCfg(
     ),
     init_state=ArticulationCfg.InitialStateCfg(
         joint_pos=initial_joint_positions,
-        pos=(0.0, -0.0765, 0.67),
-        rot=(0.0883866, -0.1406036, -0.5248117, 0.8348599),
+        pos=world_to_base_pos,
+        rot=world_to_base_quat.tolist(),
     ),
     actuators={
         "kuka": ImplicitActuatorCfg(
