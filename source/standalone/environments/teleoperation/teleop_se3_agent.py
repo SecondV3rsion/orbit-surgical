@@ -89,7 +89,7 @@ def main():
     """Running keyboard teleoperation with Isaac Lab manipulation environment."""
     # parse configuration
     env_cfg = parse_env_cfg(
-        args_cli.task, device=args_cli.device, num_envs=args_cli.num_envs, use_fabric=not args_cli.disable_fabric
+        args_cli.task, num_envs=args_cli.num_envs, use_fabric=not args_cli.disable_fabric
     )
     # modify configuration
     env_cfg.terminations.time_out = None
