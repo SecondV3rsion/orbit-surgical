@@ -72,7 +72,7 @@ class CommandsCfg:
     object_pose = mdp.UniformPoseCommandCfg(
         asset_name="robot",
         body_name=MISSING,  # will be set by agent env cfg
-        resampling_time_range=(1.0, 1.0),
+        resampling_time_range=(5.0, 5.0),
         debug_vis=False,
         ranges=mdp.UniformPoseCommandCfg.Ranges(
             pos_x=(-0.8, -0.7),
@@ -126,7 +126,7 @@ class EventCfg:
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
-            "pose_range": {"x": (-0.03, 0.03), "y": (-0.03, 0.03), "z": (0.0, 0.0)},
+            "pose_range": {"x": (-0.03, 0.1), "y": (-0.03, 0.5), "z": (0.0, 0.0)},
             "velocity_range": {},
             "asset_cfg": SceneEntityCfg("object", body_names="Object"),
         },
@@ -137,30 +137,25 @@ class EventCfg:
 class RewardsCfg:
     """Reward terms for the MDP."""
 
-    # Encourage reaching the object
-    reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.1}, weight=10.0)
+    reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.1}, weight=1.0)
 
-    # Encourage lifting the object above a certain height
-    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.03}, weight=15.0)
+    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.02}, weight=15.0)
 
-    # Reward for moving towards the target pose
     object_goal_tracking = RewTerm(
         func=mdp.object_goal_distance,
-        params={"std": 0.3, "minimal_height": 0.03, "command_name": "object_pose"},
+        params={"std": 0.3, "minimal_height": 0.02, "command_name": "object_pose"},
         weight=16.0,
     )
 
-    # Fine-grained reward for precise goal tracking
     object_goal_tracking_fine_grained = RewTerm(
         func=mdp.object_goal_distance,
-        params={"std": 0.05, "minimal_height": 0.03, "command_name": "object_pose"},
+        params={"std": 0.05, "minimal_height": 0.02, "command_name": "object_pose"},
         weight=5.0,
     )
 
-    # Penalty for rapid or large movements
+    # action penalty
     action_rate = RewTerm(func=mdp.action_rate_l2, weight=-1e-3)
 
-    # Penalty for high joint velocities
     joint_vel = RewTerm(
         func=mdp.joint_vel_l2,
         weight=-1e-4,
@@ -225,7 +220,7 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
         # general settings
         self.decimation = 4
         self.sim.render_interval = self.decimation
-        self.episode_length_s = 2.0
+        self.episode_length_s = 5.0
         # simulation settings
         self.sim.dt = 1.0 / 200.0
         self.viewer.eye = (4, -0.6, 0.3)
