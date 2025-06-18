@@ -35,28 +35,28 @@ class NeedleLiftEnvCfg(LiftEnvCfg):
         self.actions.body_joint_pos = mdp.JointPositionActionCfg(
             asset_name="robot",
             joint_names=[
-                "kuka_joint_1",
-                "kuka_joint_2",
-                "kuka_joint_3",
-                "kuka_joint_4",
-                "kuka_joint_5",
-                "kuka_joint_6",
-                "kuka_joint_7",
-                "lnd_tool_roll_joint",
-                "lnd_tool_pitch_joint",
-                "lnd_tool_yaw_joint",
+                "kuka_A1",
+                "kuka_A2",
+                "kuka_A3",
+                "kuka_A4",
+                "kuka_A5",
+                "kuka_A6",
+                "kuka_A7",
+                "tool_roll",
+                "tool_pitch",
+                "tool_yaw0",
             ],
             scale=0.5,
             use_default_offset=True,
         )
         self.actions.finger_joint_pos = mdp.BinaryJointPositionActionCfg(
             asset_name="robot",
-            joint_names=["lnd_tool_gripper.*_joint"],
-            open_command_expr={"lnd_tool_gripper1_joint": -0.5, "lnd_tool_gripper2_joint": 0.5},
-            close_command_expr={"lnd_tool_gripper1_joint": -0.09, "lnd_tool_gripper2_joint": 0.09},
+            joint_names=["tool_yaw1", "tool_yaw2"],
+            open_command_expr={"tool_yaw1": 0.5, "tool_yaw2": 0.5},
+            close_command_expr={"tool_yaw1": 0.0, "tool_yaw2": 0.0},
         )
         # Set the body name for the end effector
-        self.commands.object_pose.body_name = "lnd_tool_tip_link"
+        self.commands.object_pose.body_name = "tool_tcp0"
 
         # Set Suture Needle as object
         self.scene.object = RigidObjectCfg(
@@ -86,7 +86,7 @@ class NeedleLiftEnvCfg(LiftEnvCfg):
             visualizer_cfg=marker_cfg,
             target_frames=[
                 FrameTransformerCfg.FrameCfg(
-                    prim_path="{ENV_REGEX_NS}/Robot/lnd_tool_tip_link",
+                    prim_path="{ENV_REGEX_NS}/Robot/tool_tcp0",
                     name="end_effector",
                 ),
             ],

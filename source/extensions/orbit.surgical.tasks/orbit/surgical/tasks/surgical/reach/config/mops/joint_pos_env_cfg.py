@@ -12,6 +12,7 @@ from isaaclab.assets import AssetBaseCfg
 from isaaclab.managers import EventTermCfg as EventTerm
 from isaaclab.sensors import FrameTransformerCfg
 from isaaclab.utils import configclass
+import numpy as np
 
 ##
 # Pre-defined configs
@@ -24,6 +25,7 @@ from orbit.surgical.assets.mops import MOPS_CFG  # isort: skip
 # Environment configuration
 ##
 
+DEFAULT_ROT_TCP = [-np.pi, np.pi/2, 0] # roll, pitch, yaw
 
 @configclass
 class MOPSReachEnvCfg(ReachEnvCfg):
@@ -45,40 +47,43 @@ class MOPSReachEnvCfg(ReachEnvCfg):
         # switch robot to MOPS
         self.scene.robot = MOPS_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
         # override rewards
-        self.rewards.end_effector_position_tracking.params["asset_cfg"].body_names = ["lnd_tool_tip_link"]
-        self.rewards.end_effector_orientation_tracking.params["asset_cfg"].body_names = ["lnd_tool_tip_link"]
+        self.rewards.end_effector_position_tracking.params["asset_cfg"].body_names = ["tool_tcp0"]
+        self.rewards.end_effector_orientation_tracking.params["asset_cfg"].body_names = ["tool_tcp0"]
+        #override terminations
+        self.terminations.reached_goal.params["asset_cfg"].body_names = ["tool_tcp0"]
+        # override observations
         # override actions
         self.actions.arm_action = mdp.JointPositionActionCfg(
             asset_name="robot",
             joint_names=[
-                "kuka_joint_1",
-                "kuka_joint_2",
-                "kuka_joint_3",
-                "kuka_joint_4",
-                "kuka_joint_5",
-                "kuka_joint_6",
-                "kuka_joint_7",
-                "lnd_tool_roll_joint",
-                "lnd_tool_pitch_joint",
-                "lnd_tool_yaw_joint",
+                "kuka_A1",
+                "kuka_A2",
+                "kuka_A3",
+                "kuka_A4",
+                "kuka_A5",
+                "kuka_A6",
+                "kuka_A7",
+                "tool_roll",
+                "tool_pitch",
+                "tool_yaw0",
             ],
-            scale=0.5,
+            scale=1,
             use_default_offset=True,
         )
         # override command generator body
         # end-effector is along z-direction
         self.commands.ee_pose = mdp.UniformPoseCommandCfg(
             asset_name="robot",
-            body_name="lnd_tool_tip_link",
+            body_name="tool_tcp0",
             resampling_time_range=(4.0, 4.0),
             debug_vis=True,
             ranges=mdp.UniformPoseCommandCfg.Ranges(
-                pos_x=(-0.8, -0.7),
-                pos_y=(0.6, 0.8),
-                pos_z=(-0.1, 0.1),
-                roll=(-math.pi / 2, -math.pi / 2),
-                pitch=(-math.pi / 4, math.pi / 4),
-                yaw=(0.0, 0.0),
+                pos_x=(0.45, 0.55),
+                pos_y=(-0.1, 0.1),
+                pos_z=(0.2, 0.3),
+                roll=(DEFAULT_ROT_TCP[0] - np.pi/4, DEFAULT_ROT_TCP[0] + np.pi/4),
+                pitch=(DEFAULT_ROT_TCP[1] - np.pi/4, DEFAULT_ROT_TCP[1] + np.pi/4),
+                yaw=(DEFAULT_ROT_TCP[2] - np.pi/4, DEFAULT_ROT_TCP[2] + np.pi/4),
             ),
         )
 
@@ -101,7 +106,7 @@ class MOPSReachEnvCfg(ReachEnvCfg):
             visualizer_cfg=marker_cfg,
             target_frames=[
                 FrameTransformerCfg.FrameCfg(
-                    prim_path="{ENV_REGEX_NS}/Robot/lnd_tool_tip_link",
+                    prim_path="{ENV_REGEX_NS}/Robot/tool_tcp0",
                     name="end_effector",
                 ),
             ],
