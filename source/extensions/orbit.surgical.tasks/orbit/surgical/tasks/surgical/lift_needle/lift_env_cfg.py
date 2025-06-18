@@ -24,6 +24,7 @@ from . import mdp
 # Scene definition
 ##
 
+DEFAULT_ROT_TCP = [-np.pi, np.pi/2, 0] # roll, pitch, yaw
 
 @configclass
 class ObjectTableSceneCfg(InteractiveSceneCfg):
@@ -39,7 +40,6 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
     # target object: will be populated by agent env cfg
     object: RigidObjectCfg = MISSING
 
-    # Table površina je +0.25m po z-osi v world frame
     table = AssetBaseCfg(
         prim_path="{ENV_REGEX_NS}/Table",
         init_state=AssetBaseCfg.InitialStateCfg(pos=(0.5, 0.0, -0.457), rot=(0.7071068, 0, 0, 0.7071068)),
@@ -75,15 +75,14 @@ class CommandsCfg:
         resampling_time_range=(5.0, 5.0),
         debug_vis=False,
         ranges=mdp.UniformPoseCommandCfg.Ranges(
-            pos_x=(-0.8, -0.7),
-            pos_y=(0.6, 0.8),
-            pos_z=(-0.1, 0.1),
-            roll=(-np.pi / 2, -np.pi / 2),
-            pitch=(-np.pi / 4, np.pi / 4),
-            yaw=(0.0, 0.0),
+            pos_x=(0.45, 0.55),
+            pos_y=(-0.05, 0.05),
+            pos_z=(0.1, 0.15),
+            roll=(DEFAULT_ROT_TCP[0], DEFAULT_ROT_TCP[0]),
+            pitch=(DEFAULT_ROT_TCP[1], DEFAULT_ROT_TCP[1]),
+            yaw=(DEFAULT_ROT_TCP[2], DEFAULT_ROT_TCP[2]),
         ),
     )
-
 
 @configclass
 class ActionsCfg:
@@ -204,7 +203,7 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the lifting environment."""
 
     # Scene settings
-    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=512, env_spacing=2.5)
+    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=4096, env_spacing=2.5)
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()
