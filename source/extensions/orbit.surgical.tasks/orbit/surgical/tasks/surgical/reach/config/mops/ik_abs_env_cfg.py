@@ -40,7 +40,7 @@ class MOPSReachEnvCfg(joint_pos_env_cfg.MOPSReachEnvCfg):
                 "tool_pitch",
                 "tool_yaw0",
             ],
-            body_name="tool_yaw0",
+            body_name="tool_tcp0",
             controller=DifferentialIKControllerCfg(command_type="position", use_relative_mode=False, ik_method="dls"),
         )
 
