@@ -47,7 +47,7 @@ initial_joint_positions = {
 
 MOPS_CFG = ArticulationCfg(
     spawn=sim_utils.UsdFileCfg(
-        usd_path=f"{ORBITSURGICAL_ASSETS_DATA_DIR}/Robots/MOPS/mopsV2/mopsV2.usd",
+        usd_path=f"{ORBITSURGICAL_ASSETS_DATA_DIR}/Robots/MOPS/mops.usd",
         activate_contact_sensors=False,
         rigid_props=sim_utils.RigidBodyPropertiesCfg(
             disable_gravity=False,
@@ -75,8 +75,8 @@ MOPS_CFG = ArticulationCfg(
             ],
             effort_limit_sim=400.0,
             velocity_limit_sim=2.175,
-            stiffness=400.0,
-            damping=40.0,
+            stiffness=200.0,
+            damping=20.0,
         ),
         "tool": ImplicitActuatorCfg(
             joint_names_expr=[
