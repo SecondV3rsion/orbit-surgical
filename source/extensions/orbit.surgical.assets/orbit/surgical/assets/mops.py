@@ -73,10 +73,10 @@ MOPS_CFG = ArticulationCfg(
                 "kuka_A6",
                 "kuka_A7",
             ],
-            effort_limit=87.0,
-            velocity_limit=2.175,
-            stiffness=80.0,
-            damping=4.0,
+            effort_limit_sim=400.0,
+            velocity_limit_sim=2.175,
+            stiffness=400.0,
+            damping=40.0,
         ),
         "tool": ImplicitActuatorCfg(
             joint_names_expr=[
@@ -86,8 +86,8 @@ MOPS_CFG = ArticulationCfg(
                 "tool_yaw1",
                 "tool_yaw2",
             ],
-            effort_limit=0.1,
-            velocity_limit=0.2,
+            effort_limit_sim=40.0,
+            velocity_limit_sim=1,
             stiffness=500,
             damping=0.1,
         ),
@@ -99,7 +99,7 @@ MOPS_CFG = ArticulationCfg(
 
 MOPS_HIGH_PD_CFG = MOPS_CFG.copy()
 MOPS_HIGH_PD_CFG.spawn.rigid_props.disable_gravity = True
-MOPS_HIGH_PD_CFG.actuators["kuka"].stiffness = 400.0
+MOPS_HIGH_PD_CFG.actuators["kuka"].stiffness = 600.0
 MOPS_HIGH_PD_CFG.actuators["kuka"].damping = 80.0
 """Configuration of MOPS robot arm with stiffer PD control.
 

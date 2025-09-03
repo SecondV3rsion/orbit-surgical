@@ -30,6 +30,11 @@ class NeedleLiftEnvCfg(LiftEnvCfg):
 
         # Set MOPS as robot
         self.scene.robot = MOPS_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        self.scene.robot.init_state = MOPS_CFG.InitialStateCfg(
+            pos=(0.0, 0.0, -0.2),  # initial position of the robot base
+            rot=MOPS_CFG.init_state.rot,  # initial orientation of the robot bas
+            joint_pos=MOPS_CFG.init_state.joint_pos,  # initial joint positions
+        )
 
         # Set actions for the specific robot type (MOPS)
         self.actions.body_joint_pos = mdp.JointPositionActionCfg(
@@ -53,7 +58,7 @@ class NeedleLiftEnvCfg(LiftEnvCfg):
             asset_name="robot",
             joint_names=["tool_yaw1", "tool_yaw2"],
             open_command_expr={"tool_yaw1": 0.5, "tool_yaw2": 0.5},
-            close_command_expr={"tool_yaw1": 0.0, "tool_yaw2": 0.0},
+            close_command_expr={"tool_yaw1": 0.09, "tool_yaw2": 0.09},
         )
         # Set the body name for the end effector
         self.commands.object_pose.body_name = "tool_tcp0"
@@ -61,9 +66,9 @@ class NeedleLiftEnvCfg(LiftEnvCfg):
         # Set Suture Needle as object
         self.scene.object = RigidObjectCfg(
             prim_path="{ENV_REGEX_NS}/Object",
-            init_state=RigidObjectCfg.InitialStateCfg(pos=(0.5, -0.4, 0.015), rot=(1, 0, 0, 0)),
+            init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.2, 0.015), rot=(0.7071068, 0, 0, 0.7071068)),
             spawn=UsdFileCfg(
-                usd_path=f"{ORBITSURGICAL_ASSETS_DATA_DIR}/Props/Surgical_needle/needle_sdf.usd",
+                usd_path=f"{ORBITSURGICAL_ASSETS_DATA_DIR}/Props/Surgical_needle/needle.usd",
                 scale=(0.4, 0.4, 0.4),
                 rigid_props=RigidBodyPropertiesCfg(
                     solver_position_iteration_count=16,
