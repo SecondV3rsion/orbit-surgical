@@ -24,6 +24,7 @@ from . import mdp
 # Scene definition
 ##
 
+DEFAULT_ROT_TCP = [-np.pi, np.pi/2, 0] # roll, pitch, yaw
 
 @configclass
 class ObjectTableSceneCfg(InteractiveSceneCfg):
@@ -39,10 +40,9 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
     # target object: will be populated by agent env cfg
     object: RigidObjectCfg = MISSING
 
-    # Table
     table = AssetBaseCfg(
         prim_path="{ENV_REGEX_NS}/Table",
-        init_state=AssetBaseCfg.InitialStateCfg(pos=(0.5, 0.0, -0.457), rot=(0.7071068, 0, 0, 0.7071068)),
+        init_state=AssetBaseCfg.InitialStateCfg(pos=(0.7, 0.0, -0.457), rot=(0.7071068, 0, 0, 0.7071068)),
         spawn=UsdFileCfg(usd_path=f"{ORBITSURGICAL_ASSETS_DATA_DIR}/Props/Table/table.usd"),
     )
 
@@ -72,18 +72,17 @@ class CommandsCfg:
     object_pose = mdp.UniformPoseCommandCfg(
         asset_name="robot",
         body_name=MISSING,  # will be set by agent env cfg
-        resampling_time_range=(1.0, 1.0),
+        resampling_time_range=(5.0, 5.0),
         debug_vis=False,
         ranges=mdp.UniformPoseCommandCfg.Ranges(
-            pos_x=(-0.8, -0.7),
-            pos_y=(0.6, 0.8),
-            pos_z=(-0.1, 0.1),
-            roll=(-np.pi / 2, -np.pi / 2),
-            pitch=(-np.pi / 4, np.pi / 4),
-            yaw=(0.0, 0.0),
+            pos_x=(0.45, 0.55),
+            pos_y=(-0.05, 0.05),
+            pos_z=(0.1, 0.15),
+            roll=(DEFAULT_ROT_TCP[0], DEFAULT_ROT_TCP[0]),
+            pitch=(DEFAULT_ROT_TCP[1], DEFAULT_ROT_TCP[1]),
+            yaw=(DEFAULT_ROT_TCP[2], DEFAULT_ROT_TCP[2]),
         ),
     )
-
 
 @configclass
 class ActionsCfg:
@@ -126,7 +125,7 @@ class EventCfg:
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
-            "pose_range": {"x": (-0.03, 0.03), "y": (-0.03, 0.03), "z": (0.0, 0.0)},
+            "pose_range": {"x": (0.6, 0.66), "y": (-0.2, -0.26), "z": (0.0, 0.0)},
             "velocity_range": {},
             "asset_cfg": SceneEntityCfg("object", body_names="Object"),
         },
@@ -137,30 +136,25 @@ class EventCfg:
 class RewardsCfg:
     """Reward terms for the MDP."""
 
-    # Encourage reaching the object
-    reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.1}, weight=10.0)
+    reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.1}, weight=2.0)
 
-    # Encourage lifting the object above a certain height
-    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.03}, weight=15.0)
+    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.02}, weight=15.0)
 
-    # Reward for moving towards the target pose
     object_goal_tracking = RewTerm(
         func=mdp.object_goal_distance,
-        params={"std": 0.3, "minimal_height": 0.03, "command_name": "object_pose"},
+        params={"std": 0.3, "minimal_height": 0.02, "command_name": "object_pose"},
         weight=16.0,
     )
 
-    # Fine-grained reward for precise goal tracking
     object_goal_tracking_fine_grained = RewTerm(
         func=mdp.object_goal_distance,
-        params={"std": 0.05, "minimal_height": 0.03, "command_name": "object_pose"},
+        params={"std": 0.05, "minimal_height": 0.02, "command_name": "object_pose"},
         weight=5.0,
     )
 
-    # Penalty for rapid or large movements
+    # action penalty
     action_rate = RewTerm(func=mdp.action_rate_l2, weight=-1e-3)
 
-    # Penalty for high joint velocities
     joint_vel = RewTerm(
         func=mdp.joint_vel_l2,
         weight=-1e-4,
@@ -172,16 +166,11 @@ class RewardsCfg:
 class TerminationsCfg:
     """Termination terms for the MDP."""
 
-    # Timeout for the episode
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
 
-    # Terminate if the object falls below a certain height
     object_dropping = DoneTerm(
         func=mdp.root_height_below_minimum, params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("object")}
     )
-
-    # Terminate when the object is lifted and reaches a goal height
-    object_lifted = DoneTerm(func=mdp.object_reached_goal, params={"threshold": 0.1})
 
 
 @configclass
@@ -225,7 +214,7 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
         # general settings
         self.decimation = 4
         self.sim.render_interval = self.decimation
-        self.episode_length_s = 2.0
+        self.episode_length_s = 5.0
         # simulation settings
         self.sim.dt = 1.0 / 200.0
         self.viewer.eye = (4, -0.6, 0.3)

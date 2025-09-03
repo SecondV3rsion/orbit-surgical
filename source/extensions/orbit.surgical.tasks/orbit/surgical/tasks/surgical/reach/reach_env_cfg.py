@@ -129,6 +129,15 @@ class TerminationsCfg:
     """Termination terms for the MDP."""
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
+    reached_goal = DoneTerm(
+        func=mdp.reached_desired_pose,
+        params={
+            "command_name": "ee_pose",
+            "asset_cfg": SceneEntityCfg("robot", body_names=MISSING),
+            "pos_thresh": 0.01,
+            "rot_thresh": 0.05,
+        },
+    )
 
 
 @configclass
@@ -150,7 +159,7 @@ class ReachEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the reach end-effector pose tracking environment."""
 
     # Scene settings
-    scene: ReachSceneCfg = ReachSceneCfg(num_envs=4096, env_spacing=2.5)
+    scene: ReachSceneCfg = ReachSceneCfg(num_envs=2048, env_spacing=2.5)
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()

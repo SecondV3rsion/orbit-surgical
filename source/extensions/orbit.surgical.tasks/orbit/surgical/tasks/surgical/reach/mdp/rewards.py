@@ -48,3 +48,24 @@ def orientation_command_error(env: ManagerBasedRLEnv, command_name: str, asset_c
     des_quat_w = quat_mul(asset.data.root_state_w[:, 3:7], des_quat_b)
     curr_quat_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], 3:7]  # type: ignore
     return quat_error_magnitude(curr_quat_w, des_quat_w)
+
+def reached_desired_pose(env: ManagerBasedRLEnv, command_name: str, asset_cfg: SceneEntityCfg,
+                         pos_thresh: float = 0.01, rot_thresh: float = 0.01) -> torch.Tensor:
+    """
+    Terminate episode when end-effector pose is close enough to the desired command pose.
+
+    Args:
+        env: The RL environment.
+        command_name: Name of the command to fetch the desired pose.
+        asset_cfg: Configuration of the asset (robot).
+        pos_thresh: Position error threshold in meters.
+        rot_thresh: Orientation error threshold in radians.
+
+    Returns:
+        A tensor of shape (num_envs,) with 1.0 where the termination condition is met.
+    """
+    pos_err = position_command_error(env, command_name, asset_cfg)
+    rot_err = orientation_command_error(env, command_name, asset_cfg)
+
+    done = ((pos_err < pos_thresh) & (rot_err < rot_thresh)).bool()
+    return done
