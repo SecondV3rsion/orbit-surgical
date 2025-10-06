@@ -297,7 +297,7 @@ def main():
         device_name = device_name.lower()
         nonlocal running_recording_instance
         if device_name == "keyboard":
-            return Se3Keyboard(pos_sensitivity=0.2, rot_sensitivity=0.5)
+            return Se3Keyboard(pos_sensitivity=0.005, rot_sensitivity=0.05)
         elif device_name == "spacemouse":
             return Se3SpaceMouse(pos_sensitivity=0.2, rot_sensitivity=0.5)
         elif "dualhandtracking_abs" in device_name and "GR1T2" in env.cfg.env_name:

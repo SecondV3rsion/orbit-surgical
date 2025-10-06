@@ -7,6 +7,7 @@
 import gymnasium as gym
 
 from . import agents, ik_abs_env_cfg, ik_rel_env_cfg, joint_pos_env_cfg
+from . import ik_rel_mimic_env_cfg, ik_rel_mimic_env
 
 ##
 # Register Gym environments.
@@ -80,6 +81,15 @@ gym.register(
     kwargs={
         "env_cfg_entry_point": ik_rel_env_cfg.NeedleLiftEnvCfg_PLAY,
         "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.LiftNeedlePPORunnerCfg,
+    },
+    disable_env_checker=True,
+)
+
+gym.register(
+    id="Isaac-Lift-Needle-MOPS-Mimic-v0",
+    entry_point="orbit.surgical.tasks.surgical.lift_needle.config.mops.ik_rel_mimic_env:NeedleLiftMimicEnv",
+    kwargs={
+        "env_cfg_entry_point": ik_rel_mimic_env_cfg.NeedleLiftMimicEnvCfg,
     },
     disable_env_checker=True,
 )

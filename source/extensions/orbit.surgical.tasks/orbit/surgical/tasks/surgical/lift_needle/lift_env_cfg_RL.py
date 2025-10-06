@@ -5,7 +5,7 @@ from orbit.surgical.assets import ORBITSURGICAL_ASSETS_DATA_DIR
 
 import isaaclab.sim as sim_utils
 from isaaclab.assets import ArticulationCfg, AssetBaseCfg, RigidObjectCfg
-from isaaclab.envs import ManagerBasedRLEnvCfg, ManagerBasedRLMimicEnv
+from isaaclab.envs import ManagerBasedRLEnvCfg
 from isaaclab.managers import CurriculumTermCfg as CurrTerm
 from isaaclab.managers import EventTermCfg as EventTerm
 from isaaclab.managers import ObservationGroupCfg as ObsGroup
@@ -113,45 +113,8 @@ class ObservationsCfg:
             self.enable_corruption = True
             self.concatenate_terms = True
 
-    @configclass
-    class PolicyNoConcatCfg(ObsGroup):
-        """Observations for mimic policy group."""
-        eef_pos = ObsTerm(func=mdp.ee_frame_pos)
-        eef_quat = ObsTerm(func=mdp.ee_frame_quat)
-        def __post_init__(self):
-            self.enable_corruption = False
-            self.concatenate_terms = False
-    
-    @configclass
-    class SubtaskCfg(ObsGroup):
-        """Observations for subtask group."""
-        
-        grasp = ObsTerm(
-            func=mdp.object_grasped,
-            params={
-                "robot_cfg": SceneEntityCfg("robot"),
-                "ee_frame_cfg": SceneEntityCfg("ee_frame"),
-                "object_cfg": SceneEntityCfg("object"),
-            },
-        )
-        object_lifted = ObsTerm(
-            func=mdp.object_is_lifted,
-            params={
-                "object_cfg": SceneEntityCfg("object"),
-                "minimal_height": 0.02,
-            },
-        )
-
-        goal_reached = ObsTerm(func=mdp.object_reached_goal)
-
-        def __post_init__(self):
-            self.enable_corruption = False
-            self.concatenate_terms = False
-
     # observation groups
     policy: PolicyCfg = PolicyCfg()
-    policy_no_concat: PolicyNoConcatCfg = PolicyNoConcatCfg()
-    subtask: SubtaskCfg = SubtaskCfg()
 
 
 @configclass
