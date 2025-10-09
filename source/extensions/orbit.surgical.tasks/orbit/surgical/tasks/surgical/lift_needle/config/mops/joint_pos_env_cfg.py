@@ -6,7 +6,7 @@
 from orbit.surgical.assets import ORBITSURGICAL_ASSETS_DATA_DIR
 
 from orbit.surgical.tasks.surgical.lift_needle import mdp
-from orbit.surgical.tasks.surgical.lift_needle.lift_env_cfg import LiftEnvCfg
+from orbit.surgical.tasks.surgical.lift_needle.lift_env_mimic_cfg import LiftEnvCfg
 
 from isaaclab.assets import RigidObjectCfg
 from isaaclab.sensors import FrameTransformerCfg
