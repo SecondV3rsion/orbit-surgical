@@ -313,7 +313,6 @@ def replay_episode(
                     return False
                 continue
         action_tensor = torch.Tensor(action).reshape([1, action.shape[0]])
-        print(f"Step {action_index}, Action: {action_tensor}")
         env.step(torch.Tensor(action_tensor))
     if success_term is not None:
         if not bool(success_term.func(env, **success_term.params)[0]):
