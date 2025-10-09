@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2024, The Isaac Lab Project Developers.
+# Copyright (c) 2022-2025, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
 # All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -28,15 +28,19 @@
 """
 The main entry point for training policies from pre-collected data.
 
+This script loads dataset(s), creates a model based on the algorithm specified,
+and trains the model. It supports training on various environments with multiple
+algorithms from robomimic.
+
 Args:
-    algo: name of the algorithm to run.
-    task: name of the environment.
-    name: if provided, override the experiment name defined in the config
-    dataset: if provided, override the dataset path defined in the config
+    algo: Name of the algorithm to run.
+    task: Name of the environment.
+    name: If provided, override the experiment name defined in the config.
+    dataset: If provided, override the dataset path defined in the config.
+    log_dir: Directory to save logs.
+    normalize_training_actions: Whether to normalize actions in the training data.
 
-This file has been modified from the original version in the following ways:
-
-* Added import of AppLauncher from isaaclab.app to resolve the configuration to load for training.
+This file has been modified from the original robomimic version to integrate with IsaacLab.
 """
 
 """Launch Isaac Sim Simulator first."""
@@ -49,11 +53,16 @@ simulation_app = app_launcher.app
 
 """Rest everything follows."""
 
+# Standard library imports
 import argparse
+
+# Third-party imports
 import gymnasium as gym
+import h5py
 import json
 import numpy as np
 import os
+import shutil
 import sys
 import time
 import torch
@@ -62,23 +71,81 @@ from collections import OrderedDict
 from torch.utils.data import DataLoader
 
 import psutil
+
+# Robomimic imports
 import robomimic.utils.env_utils as EnvUtils
 import robomimic.utils.file_utils as FileUtils
 import robomimic.utils.obs_utils as ObsUtils
 import robomimic.utils.torch_utils as TorchUtils
 import robomimic.utils.train_utils as TrainUtils
-from robomimic.algo import RolloutPolicy, algo_factory
-from robomimic.config import config_factory
+from robomimic.algo import algo_factory
+from robomimic.config import Config, config_factory
 from robomimic.utils.log_utils import DataLogger, PrintLogger
 
+# Orbit Surgical Tasks imports (needed so that environment is registered)
 import orbit.surgical.tasks  # noqa: F401
 
-# Needed so that environment is registered
+# Isaac Lab imports (needed so that environment is registered)
 import isaaclab_tasks  # noqa: F401
+import isaaclab_tasks.manager_based.manipulation.pick_place  # noqa: F401
 
 
-def train(config, device):
-    """Train a model using the algorithm."""
+def normalize_hdf5_actions(config: Config, log_dir: str) -> str:
+    """Normalizes actions in hdf5 dataset to [-1, 1] range.
+
+    Args:
+        config: The configuration object containing dataset path.
+        log_dir: Directory to save normalization parameters.
+
+    Returns:
+        Path to the normalized dataset.
+    """
+    base, ext = os.path.splitext(config.train.data)
+    normalized_path = base + "_normalized" + ext
+
+    # Copy the original dataset
+    print(f"Creating normalized dataset at {normalized_path}")
+    shutil.copyfile(config.train.data, normalized_path)
+
+    # Open the new dataset and normalize the actions
+    with h5py.File(normalized_path, "r+") as f:
+        dataset_paths = [f"/data/demo_{str(i)}/actions" for i in range(len(f["data"].keys()))]
+
+        # Compute the min and max of the dataset
+        dataset = np.array(f[dataset_paths[0]]).flatten()
+        for i, path in enumerate(dataset_paths):
+            if i != 0:
+                data = np.array(f[path]).flatten()
+                dataset = np.append(dataset, data)
+
+        max = np.max(dataset)
+        min = np.min(dataset)
+
+        # Normalize the actions
+        for i, path in enumerate(dataset_paths):
+            data = np.array(f[path])
+            normalized_data = 2 * ((data - min) / (max - min)) - 1  # Scale to [-1, 1] range
+            del f[path]
+            f[path] = normalized_data
+
+        # Save the min and max values to log directory
+        with open(os.path.join(log_dir, "normalization_params.txt"), "w") as f:
+            f.write(f"min: {min}\n")
+            f.write(f"max: {max}\n")
+
+    return normalized_path
+
+
+def train(config: Config, device: str, log_dir: str, ckpt_dir: str, video_dir: str):
+    """Train a model using the algorithm specified in config.
+
+    Args:
+        config: Configuration object.
+        device: PyTorch device to use for training.
+        log_dir: Directory to save logs.
+        ckpt_dir: Directory to save checkpoints.
+        video_dir: Directory to save videos.
+    """
     # first set seeds
     np.random.seed(config.train.seed)
     torch.manual_seed(config.train.seed)
@@ -86,7 +153,7 @@ def train(config, device):
     print("\n============= New Training Run with Config =============")
     print(config)
     print("")
-    log_dir, ckpt_dir, video_dir = TrainUtils.get_exp_dir(config)
+
     print(f">>> Saving logs into directory: {log_dir}")
     print(f">>> Saving checkpoints into directory: {ckpt_dir}")
     print(f">>> Saving videos into directory: {video_dir}")
@@ -196,8 +263,6 @@ def train(config, device):
 
     # main training loop
     best_valid_loss = None
-    best_return = {k: -np.inf for k in envs} if config.experiment.rollout.enabled else None
-    best_success_rate = {k: -1.0 for k in envs} if config.experiment.rollout.enabled else None
     last_ckpt_time = time.time()
 
     # number of learning steps per epoch (defaults to a full dataset pass)
@@ -261,66 +326,6 @@ def train(config, device):
                     should_save_ckpt = True
                     ckpt_reason = "valid" if ckpt_reason is None else ckpt_reason
 
-        # Evaluate the model by by running rollouts
-
-        # do rollouts at fixed rate or if it's time to save a new ckpt
-        video_paths = None
-        rollout_check = (epoch % config.experiment.rollout.rate == 0) or (should_save_ckpt and ckpt_reason == "time")
-        if config.experiment.rollout.enabled and (epoch > config.experiment.rollout.warmstart) and rollout_check:
-            # wrap model as a RolloutPolicy to prepare for rollouts
-            rollout_model = RolloutPolicy(model, obs_normalization_stats=obs_normalization_stats)
-
-            num_episodes = config.experiment.rollout.n
-            all_rollout_logs, video_paths = TrainUtils.rollout_with_stats(
-                policy=rollout_model,
-                envs=envs,
-                horizon=config.experiment.rollout.horizon,
-                use_goals=config.use_goals,
-                num_episodes=num_episodes,
-                render=False,
-                video_dir=video_dir if config.experiment.render_video else None,
-                epoch=epoch,
-                video_skip=config.experiment.get("video_skip", 5),
-                terminate_on_success=config.experiment.rollout.terminate_on_success,
-            )
-
-            # summarize results from rollouts to tensorboard and terminal
-            for env_name in all_rollout_logs:
-                rollout_logs = all_rollout_logs[env_name]
-                for k, v in rollout_logs.items():
-                    if k.startswith("Time_"):
-                        data_logger.record(f"Timing_Stats/Rollout_{env_name}_{k[5:]}", v, epoch)
-                    else:
-                        data_logger.record(f"Rollout/{k}/{env_name}", v, epoch, log_stats=True)
-
-                print("\nEpoch {} Rollouts took {}s (avg) with results:".format(epoch, rollout_logs["time"]))
-                print(f"Env: {env_name}")
-                print(json.dumps(rollout_logs, sort_keys=True, indent=4))
-
-            # checkpoint and video saving logic
-            updated_stats = TrainUtils.should_save_from_rollout_logs(
-                all_rollout_logs=all_rollout_logs,
-                best_return=best_return,
-                best_success_rate=best_success_rate,
-                epoch_ckpt_name=epoch_ckpt_name,
-                save_on_best_rollout_return=config.experiment.save.on_best_rollout_return,
-                save_on_best_rollout_success_rate=config.experiment.save.on_best_rollout_success_rate,
-            )
-            best_return = updated_stats["best_return"]
-            best_success_rate = updated_stats["best_success_rate"]
-            epoch_ckpt_name = updated_stats["epoch_ckpt_name"]
-            should_save_ckpt = (
-                config.experiment.save.enabled and updated_stats["should_save_ckpt"]
-            ) or should_save_ckpt
-            if updated_stats["ckpt_reason"] is not None:
-                ckpt_reason = updated_stats["ckpt_reason"]
-
-        # Only keep saved videos if the ckpt should be saved (but not because of validation score)
-        should_save_video = (should_save_ckpt and (ckpt_reason != "valid")) or config.experiment.keep_all_videos
-        if video_paths is not None and not should_save_video:
-            for env_name in video_paths:
-                os.remove(video_paths[env_name])
-
         # Save model checkpoints based on conditions (success rate, validation loss, etc)
         if should_save_ckpt:
             TrainUtils.save_model(
@@ -342,22 +347,29 @@ def train(config, device):
     data_logger.close()
 
 
-def main(args):
-    """Train a model on a task using a specified algorithm."""
+def main(args: argparse.Namespace):
+    """Train a model on a task using a specified algorithm.
+
+    Args:
+        args: Command line arguments.
+    """
     # load config
     if args.task is not None:
         # obtain the configuration entry point
         cfg_entry_point_key = f"robomimic_{args.algo}_cfg_entry_point"
+        task_name = args.task.split(":")[-1]
 
-        print(f"Loading configuration for task: {args.task}")
-        cfg_entry_point_file = gym.spec(args.task).kwargs.pop(cfg_entry_point_key)
+        print(f"Loading configuration for task: {task_name}")
+        print(gym.envs.registry.keys())
+        print(" ")
+        cfg_entry_point_file = gym.spec(task_name).kwargs.pop(cfg_entry_point_key)
         # check if entry point exists
         if cfg_entry_point_file is None:
             raise ValueError(
-                f"Could not find configuration for the environment: '{args.task}'."
+                f"Could not find configuration for the environment: '{task_name}'."
                 f" Please check that the gym registry has the entry point: '{cfg_entry_point_key}'."
             )
-        # load config from json file
+
         with open(cfg_entry_point_file) as f:
             ext_cfg = json.load(f)
             config = config_factory(ext_cfg["algo_name"])
@@ -375,7 +387,13 @@ def main(args):
         config.experiment.name = args.name
 
     # change location of experiment directory
-    config.train.output_dir = os.path.abspath(os.path.join("./logs/robomimic", args.task))
+    config.train.output_dir = os.path.abspath(os.path.join("./logs", args.log_dir, args.task))
+
+    log_dir, ckpt_dir, video_dir = TrainUtils.get_exp_dir(config)
+
+    if args.normalize_training_actions:
+        config.train.data = normalize_hdf5_actions(config, log_dir)
+
     # get torch device
     device = TorchUtils.get_torch_device(try_to_use_cuda=config.train.cuda)
 
@@ -384,7 +402,7 @@ def main(args):
     # catch error during training and print it
     res_str = "finished run successfully!"
     try:
-        train(config, device=device)
+        train(config, device, log_dir, ckpt_dir, video_dir)
     except Exception as e:
         res_str = f"run failed with error:\n{e}\n\n{traceback.format_exc()}"
     print(res_str)
@@ -411,6 +429,8 @@ if __name__ == "__main__":
 
     parser.add_argument("--task", type=str, default=None, help="Name of the task.")
     parser.add_argument("--algo", type=str, default=None, help="Name of the algorithm.")
+    parser.add_argument("--log_dir", type=str, default="robomimic", help="Path to log directory")
+    parser.add_argument("--normalize_training_actions", action="store_true", default=False, help="Normalize actions")
 
     args = parser.parse_args()
 
