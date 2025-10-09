@@ -57,8 +57,8 @@ class NeedleLiftEnvCfg(LiftEnvCfg):
         self.actions.finger_joint_pos = mdp.BinaryJointPositionActionCfg(
             asset_name="robot",
             joint_names=["tool_yaw1", "tool_yaw2"],
-            open_command_expr={"tool_yaw1": 0.5, "tool_yaw2": 0.5},
-            close_command_expr={"tool_yaw1": 0.09, "tool_yaw2": 0.09},
+            open_command_expr={"tool_yaw1": 0.6, "tool_yaw2": 0.6},
+            close_command_expr={"tool_yaw1": 0.08, "tool_yaw2": 0.08},
         )
         # Set the body name for the end effector
         self.commands.object_pose.body_name = "tool_tcp0"

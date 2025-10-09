@@ -54,7 +54,7 @@ MOPS_CFG = ArticulationCfg(
             max_depenetration_velocity=5.0,
         ),
         articulation_props=sim_utils.ArticulationRootPropertiesCfg(
-            enabled_self_collisions=False, solver_position_iteration_count=8, solver_velocity_iteration_count=0
+            enabled_self_collisions=False, solver_position_iteration_count=8, solver_velocity_iteration_count=2
         ),
     ),
     init_state=ArticulationCfg.InitialStateCfg(
@@ -73,10 +73,10 @@ MOPS_CFG = ArticulationCfg(
                 "kuka_A6",
                 "kuka_A7",
             ],
-            effort_limit_sim=400.0,
             velocity_limit_sim=2.175,
-            stiffness=200.0,
-            damping=20.0,
+            effort_limit_sim=87.0,
+            stiffness=80.0,
+            damping=4.0,
         ),
         "tool": ImplicitActuatorCfg(
             joint_names_expr=[
@@ -86,10 +86,10 @@ MOPS_CFG = ArticulationCfg(
                 "tool_yaw1",
                 "tool_yaw2",
             ],
-            effort_limit_sim=40.0,
-            velocity_limit_sim=1,
-            stiffness=500,
-            damping=0.1,
+            effort_limit_sim=200.0,
+            velocity_limit_sim=6.0,
+            stiffness=400.0,
+            damping=40.0,
         ),
     },
     soft_joint_pos_limit_factor=1.0,
@@ -99,8 +99,8 @@ MOPS_CFG = ArticulationCfg(
 
 MOPS_HIGH_PD_CFG = MOPS_CFG.copy()
 MOPS_HIGH_PD_CFG.spawn.rigid_props.disable_gravity = True
-MOPS_HIGH_PD_CFG.actuators["kuka"].stiffness = 600.0
-MOPS_HIGH_PD_CFG.actuators["kuka"].damping = 80.0
+MOPS_HIGH_PD_CFG.actuators["kuka"].stiffness = 800.0
+MOPS_HIGH_PD_CFG.actuators["kuka"].damping = 120.0
 """Configuration of MOPS robot arm with stiffer PD control.
 
 This configuration is useful for task-space control using differential IK.
