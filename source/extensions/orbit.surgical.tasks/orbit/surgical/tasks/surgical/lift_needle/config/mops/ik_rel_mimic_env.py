@@ -26,10 +26,61 @@ class NeedleLiftMimicEnv(ManagerBasedRLMimicEnv):
             env_ids = slice(None)
 
         # Retrieve end effector pose from the observation buffer
-        eef_pos = self.obs_buf["policy_no_concat"]["eef_pos"][env_ids]
-        eef_quat = self.obs_buf["policy_no_concat"]["eef_quat"][env_ids]
+        eef_pos = self.obs_buf["policy"]["eef_pos"][env_ids]
+        eef_quat = self.obs_buf["policy"]["eef_quat"][env_ids]
         # Quaternion format is w,x,y,z
         return PoseUtils.make_pose(eef_pos, PoseUtils.matrix_from_quat(eef_quat))
+    
+    def target_eef_pose_to_action(
+        self,
+        target_eef_pose_dict: dict,
+        gripper_action_dict: dict,
+        action_noise_dict: dict | None = None,
+        env_id: int = 0,
+    ) -> torch.Tensor:
+        """
+        Takes a target pose and gripper action for the end effector controller and returns an action
+        (usually a normalized delta pose action) to try and achieve that target pose.
+        Noise is added to the target pose action if specified.
+
+        Args:
+            target_eef_pose_dict: Dictionary of 4x4 target eef pose for each end-effector.
+            gripper_action_dict: Dictionary of gripper actions for each end-effector.
+            noise: Noise to add to the action. If None, no noise is added.
+            env_id: Environment index to get the action for.
+
+        Returns:
+            An action torch.Tensor that's compatible with env.step().
+        """
+        eef_name = list(self.cfg.subtask_configs.keys())[0]
+
+        # target position and rotation
+        (target_eef_pose,) = target_eef_pose_dict.values()
+        target_pos, target_rot = PoseUtils.unmake_pose(target_eef_pose)
+
+        # current position and rotation
+        curr_pose = self.get_robot_eef_pose(eef_name, env_ids=[env_id])[0]
+        curr_pos, curr_rot = PoseUtils.unmake_pose(curr_pose)
+
+        # normalized delta position action
+        delta_position = target_pos - curr_pos
+
+        # normalized delta rotation action
+        delta_rot_mat = target_rot.matmul(curr_rot.transpose(-1, -2))
+        delta_quat = PoseUtils.quat_from_matrix(delta_rot_mat)
+        delta_rotation = PoseUtils.axis_angle_from_quat(delta_quat)
+
+        # get gripper action for single eef
+        (gripper_action,) = gripper_action_dict.values()
+
+        # add noise to action
+        pose_action = torch.cat([delta_position, delta_rotation], dim=0)
+        if action_noise_dict is not None:
+            noise = action_noise_dict["needle_lift"] * torch.randn_like(pose_action)
+            pose_action += noise
+            pose_action = torch.clamp(pose_action, -1.0, 1.0)
+
+        return torch.cat([pose_action, gripper_action], dim=0)
     
     def action_to_target_eef_pose(self, action: torch.Tensor) -> dict[str, torch.Tensor]:
         """
@@ -71,7 +122,18 @@ class NeedleLiftMimicEnv(ManagerBasedRLMimicEnv):
 
         return {eef_name: target_poses}
 
+    def actions_to_gripper_actions(self, actions: torch.Tensor) -> dict[str, torch.Tensor]:
+        """
+        Extracts the gripper actuation part from a sequence of env actions (compatible with env.step).
 
+        Args:
+            actions: environment actions. The shape is (num_envs, num steps in a demo, action_dim).
+
+        Returns:
+            A dictionary of torch.Tensor gripper actions. Key to each dict is an eef_name.
+        """
+        # last dimension is gripper action
+        return {list(self.cfg.subtask_configs.keys())[0]: actions[:, -1:]}
 
     def get_subtask_term_signals(
         self, env_ids: Sequence[int] | None = None

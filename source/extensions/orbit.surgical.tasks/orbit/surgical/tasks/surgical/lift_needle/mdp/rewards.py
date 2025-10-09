@@ -12,10 +12,46 @@ from isaaclab.assets import RigidObject
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.sensors import FrameTransformer
 from isaaclab.utils.math import combine_frame_transforms
+from isaaclab.assets import Articulation
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
 
+def object_grasped(
+    env: ManagerBasedRLEnv,
+    robot_cfg: SceneEntityCfg,
+    ee_frame_cfg: SceneEntityCfg,
+    object_cfg: SceneEntityCfg,
+    diff_threshold: float = 0.01,
+    gripper_open_val: torch.tensor = torch.tensor([0.04]),
+    gripper_threshold: float = 0.005,
+    finger1_name: str = "tool_yaw1",
+    finger2_name: str = "tool_yaw2",
+) -> torch.Tensor:
+    """Check if an object is grasped by the specified robot."""
+
+    robot: Articulation = env.scene[robot_cfg.name]
+    ee_frame: FrameTransformer = env.scene[ee_frame_cfg.name]
+    object: RigidObject = env.scene[object_cfg.name]
+
+    object_pos = object.data.root_pos_w
+    end_effector_pos = ee_frame.data.target_pos_w[:, 0, :]
+    pose_diff = torch.linalg.vector_norm(object_pos - end_effector_pos, dim=1)
+
+    finger1_idx = robot.joint_names.index(finger1_name)
+    finger2_idx = robot.joint_names.index(finger2_name)
+    joint_pos = robot.data.joint_pos
+
+    grasped = torch.logical_and(
+        pose_diff < diff_threshold,
+        torch.abs(joint_pos[:, finger1_idx] - gripper_open_val.to(env.device)) > gripper_threshold,
+    )
+    grasped = torch.logical_and(
+        grasped, torch.abs(joint_pos[:, finger2_idx] - gripper_open_val.to(env.device)) > gripper_threshold
+    )
+
+
+    return grasped
 
 def object_is_lifted(
     env: ManagerBasedRLEnv, minimal_height: float, object_cfg: SceneEntityCfg = SceneEntityCfg("object")

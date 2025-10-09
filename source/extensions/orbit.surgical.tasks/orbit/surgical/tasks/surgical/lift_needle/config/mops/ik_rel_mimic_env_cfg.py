@@ -25,8 +25,8 @@ class NeedleLiftMimicEnvCfg(ik_rel_env_cfg.NeedleLiftEnvCfg, MimicEnvCfg):
 
         subtask_configs.append(
             SubTaskConfig(
-                object_ref="object",  # tvoja igla
-                subtask_term_signal="grasp",  # mora se ujemati z obs_terms v SubtaskCfg
+                object_ref="object",  
+                subtask_term_signal="grasp",  
                 subtask_term_offset_range=(5, 10),
                 selection_strategy="nearest_neighbor_object",
                 selection_strategy_kwargs={"nn_k": 3},

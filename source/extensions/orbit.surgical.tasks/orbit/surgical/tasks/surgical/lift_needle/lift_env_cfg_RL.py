@@ -2,6 +2,7 @@ import numpy as np
 from dataclasses import MISSING
 
 from orbit.surgical.assets import ORBITSURGICAL_ASSETS_DATA_DIR
+import torch
 
 import isaaclab.sim as sim_utils
 from isaaclab.assets import ArticulationCfg, AssetBaseCfg, RigidObjectCfg
@@ -138,7 +139,14 @@ class EventCfg:
 class RewardsCfg:
     """Reward terms for the MDP."""
 
-    reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.1}, weight=2.0)
+    reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.1}, weight=1.0)
+
+    grasping_object = RewTerm(
+        func=mdp.object_grasped, 
+        params={"robot_cfg": SceneEntityCfg("robot"), "ee_frame_cfg": SceneEntityCfg("ee_frame"), 
+                "object_cfg": SceneEntityCfg("object"), "gripper_open_val": torch.tensor([0.6]),
+                "diff_threshold": 0.005}, 
+        weight=1.0)
 
     lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.02}, weight=15.0)
 

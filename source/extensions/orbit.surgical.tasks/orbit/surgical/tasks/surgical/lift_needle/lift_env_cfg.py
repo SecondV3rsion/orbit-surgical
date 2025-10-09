@@ -73,11 +73,11 @@ class CommandsCfg:
         asset_name="robot",
         body_name=MISSING,  # will be set by agent env cfg
         resampling_time_range=(5.0, 5.0),
-        debug_vis=True,
+        debug_vis=False,
         ranges=mdp.UniformPoseCommandCfg.Ranges(
             pos_x=(0.60, 0.60),
             pos_y=(0.0, 0.0),
-            pos_z=(0.35, 0.35),
+            pos_z=(0.3, 0.3),
             roll=(DEFAULT_ROT_TCP[0], DEFAULT_ROT_TCP[0]),
             pitch=(DEFAULT_ROT_TCP[1], DEFAULT_ROT_TCP[1]),
             yaw=(DEFAULT_ROT_TCP[2], DEFAULT_ROT_TCP[2]),
@@ -109,15 +109,10 @@ class ObservationsCfg:
         target_object_position = ObsTerm(func=mdp.generated_commands, params={"command_name": "object_pose"})
         actions = ObsTerm(func=mdp.last_action)
 
-        def __post_init__(self):
-            self.enable_corruption = True
-            self.concatenate_terms = True
-
-    @configclass
-    class PolicyNoConcatCfg(ObsGroup):
-        """Observations for mimic policy group."""
         eef_pos = ObsTerm(func=mdp.ee_frame_pos)
         eef_quat = ObsTerm(func=mdp.ee_frame_quat)
+        gripper_pos = ObsTerm(func=mdp.gripper_pos)
+
         def __post_init__(self):
             self.enable_corruption = False
             self.concatenate_terms = False
@@ -150,7 +145,6 @@ class ObservationsCfg:
 
     # observation groups
     policy: PolicyCfg = PolicyCfg()
-    policy_no_concat: PolicyNoConcatCfg = PolicyNoConcatCfg()
     subtask: SubtaskCfg = SubtaskCfg()
 
 
