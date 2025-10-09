@@ -24,23 +24,27 @@ class NeedleLiftEnvCfg(joint_pos_env_cfg.NeedleLiftEnvCfg):
         # Set MOPS as robot
         # We switch here to a stiffer PD controller for IK tracking to be better.
         self.scene.robot = MOPS_HIGH_PD_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
-
+        self.scene.robot.init_state = MOPS_HIGH_PD_CFG.InitialStateCfg(
+            pos=(0.0, 0.0, -0.2),  # initial position of the robot base
+            rot=MOPS_HIGH_PD_CFG.init_state.rot,  # initial orientation of the robot bas
+            joint_pos=MOPS_HIGH_PD_CFG.init_state.joint_pos,  # initial joint positions
+        )
         # Set actions for the specific robot type (MOPS)
         self.actions.body_joint_pos = DifferentialInverseKinematicsActionCfg(
             asset_name="robot",
             joint_names=[
-                "kuka_joint_1",
-                "kuka_joint_2",
-                "kuka_joint_3",
-                "kuka_joint_4",
-                "kuka_joint_5",
-                "kuka_joint_6",
-                "kuka_joint_7",
-                "lnd_tool_roll_joint",
-                "lnd_tool_pitch_joint",
-                "lnd_tool_yaw_joint",
+                "kuka_A1",
+                "kuka_A2",
+                "kuka_A3",
+                "kuka_A4",
+                "kuka_A5",
+                "kuka_A6",
+                "kuka_A7",
+                "tool_roll",
+                "tool_pitch",
+                "tool_yaw0",
             ],
-            body_name="lnd_tool_tip_link",
+            body_name="tool_tcp0",
             controller=DifferentialIKControllerCfg(command_type="pose", use_relative_mode=True, ik_method="dls"),
             scale=0.5,
         )

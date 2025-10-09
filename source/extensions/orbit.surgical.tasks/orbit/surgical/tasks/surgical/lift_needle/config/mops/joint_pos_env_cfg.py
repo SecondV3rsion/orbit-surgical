@@ -30,40 +30,45 @@ class NeedleLiftEnvCfg(LiftEnvCfg):
 
         # Set MOPS as robot
         self.scene.robot = MOPS_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        self.scene.robot.init_state = MOPS_CFG.InitialStateCfg(
+            pos=(0.0, 0.0, -0.2),  # initial position of the robot base
+            rot=MOPS_CFG.init_state.rot,  # initial orientation of the robot bas
+            joint_pos=MOPS_CFG.init_state.joint_pos,  # initial joint positions
+        )
 
         # Set actions for the specific robot type (MOPS)
         self.actions.body_joint_pos = mdp.JointPositionActionCfg(
             asset_name="robot",
             joint_names=[
-                "kuka_joint_1",
-                "kuka_joint_2",
-                "kuka_joint_3",
-                "kuka_joint_4",
-                "kuka_joint_5",
-                "kuka_joint_6",
-                "kuka_joint_7",
-                "lnd_tool_roll_joint",
-                "lnd_tool_pitch_joint",
-                "lnd_tool_yaw_joint",
+                "kuka_A1",
+                "kuka_A2",
+                "kuka_A3",
+                "kuka_A4",
+                "kuka_A5",
+                "kuka_A6",
+                "kuka_A7",
+                "tool_roll",
+                "tool_pitch",
+                "tool_yaw0",
             ],
             scale=0.5,
             use_default_offset=True,
         )
         self.actions.finger_joint_pos = mdp.BinaryJointPositionActionCfg(
             asset_name="robot",
-            joint_names=["lnd_tool_gripper.*_joint"],
-            open_command_expr={"lnd_tool_gripper1_joint": -0.5, "lnd_tool_gripper2_joint": 0.5},
-            close_command_expr={"lnd_tool_gripper1_joint": -0.09, "lnd_tool_gripper2_joint": 0.09},
+            joint_names=["tool_yaw1", "tool_yaw2"],
+            open_command_expr={"tool_yaw1": 0.6, "tool_yaw2": 0.6},
+            close_command_expr={"tool_yaw1": 0.08, "tool_yaw2": 0.08},
         )
         # Set the body name for the end effector
-        self.commands.object_pose.body_name = "lnd_tool_tip_link"
+        self.commands.object_pose.body_name = "tool_tcp0"
 
         # Set Suture Needle as object
         self.scene.object = RigidObjectCfg(
             prim_path="{ENV_REGEX_NS}/Object",
-            init_state=RigidObjectCfg.InitialStateCfg(pos=(0.5, -0.4, 0.015), rot=(1, 0, 0, 0)),
+            init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.2, 0.015), rot=(0.7071068, 0, 0, 0.7071068)),
             spawn=UsdFileCfg(
-                usd_path=f"{ORBITSURGICAL_ASSETS_DATA_DIR}/Props/Surgical_needle/needle_sdf.usd",
+                usd_path=f"{ORBITSURGICAL_ASSETS_DATA_DIR}/Props/Surgical_needle/needle.usd",
                 scale=(0.4, 0.4, 0.4),
                 rigid_props=RigidBodyPropertiesCfg(
                     solver_position_iteration_count=16,
@@ -86,7 +91,7 @@ class NeedleLiftEnvCfg(LiftEnvCfg):
             visualizer_cfg=marker_cfg,
             target_frames=[
                 FrameTransformerCfg.FrameCfg(
-                    prim_path="{ENV_REGEX_NS}/Robot/lnd_tool_tip_link",
+                    prim_path="{ENV_REGEX_NS}/Robot/tool_tcp0",
                     name="end_effector",
                 ),
             ],
