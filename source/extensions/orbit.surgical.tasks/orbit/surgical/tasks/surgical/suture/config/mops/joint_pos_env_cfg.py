@@ -6,7 +6,7 @@
 from orbit.surgical.assets import ORBITSURGICAL_ASSETS_DATA_DIR
 
 from orbit.surgical.tasks.surgical.suture import mdp
-from orbit.surgical.tasks.surgical.suture.suture_env_cfg import SutureEnvCfg 
+from orbit.surgical.tasks.surgical.suture.suture_env_mimic_cfg import SutureEnvCfg 
 
 from isaaclab.assets import RigidObjectCfg
 from isaaclab.sensors import FrameTransformerCfg
@@ -27,17 +27,25 @@ class NeedleSutureEnvCfg(SutureEnvCfg):
         # post init of parent
         super().__post_init__()
 
-        # Set MOPS as robot
-        self.scene.robot_1 = MOPS_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        # Set MOPS as robot 1
+        self.scene.robot_1 = MOPS_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot1")
         self.scene.robot_1.init_state = MOPS_CFG.InitialStateCfg(
-            pos=(0.0, 0.0, -0.2),  # initial position of the robot base
+            pos=(-0.2, 0.0, -0.2),  # initial position of the robot base
+            rot=MOPS_CFG.init_state.rot,  # initial orientation of the robot bas
+            joint_pos=MOPS_CFG.init_state.joint_pos,  # initial joint positions
+        )
+
+        # Set MOPS as robot 2
+        self.scene.robot_2 = MOPS_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot2")
+        self.scene.robot_2.init_state = MOPS_CFG.InitialStateCfg(
+            pos=(0.2, 0.5, -0.2),  # initial position of the robot base
             rot=MOPS_CFG.init_state.rot,  # initial orientation of the robot bas
             joint_pos=MOPS_CFG.init_state.joint_pos,  # initial joint positions
         )
 
         # Set actions for the specific robot type (MOPS)
-        self.actions.body_joint_pos = mdp.JointPositionActionCfg(
-            asset_name="robot",
+        self.actions.body_1_joint_pos = mdp.JointPositionActionCfg(
+            asset_name="robot_1",
             joint_names=[
                 "kuka_A1",
                 "kuka_A2",
@@ -53,26 +61,62 @@ class NeedleSutureEnvCfg(SutureEnvCfg):
             scale=0.5,
             use_default_offset=True,
         )
-        self.actions.finger_joint_pos = mdp.BinaryJointPositionActionCfg(
+        self.actions.finger_1_joint_pos = mdp.BinaryJointPositionActionCfg(
             asset_name="robot",
             joint_names=["tool_yaw1", "tool_yaw2"],
             open_command_expr={"tool_yaw1": 0.6, "tool_yaw2": 0.6},
             close_command_expr={"tool_yaw1": 0.08, "tool_yaw2": 0.08},
         )
-        # Set the body name for the end effector
-        self.commands.object_pose.body_name = "tool_tcp0"
+
+        # Set actions for robot 2 (MOPS)
+        self.actions.body_2_joint_pos = mdp.JointPositionActionCfg(
+            asset_name="robot_2",
+            joint_names=[
+                "kuka_A1",
+                "kuka_A2",
+                "kuka_A3",
+                "kuka_A4",
+                "kuka_A5",
+                "kuka_A6",
+                "kuka_A7",
+                "tool_roll",
+                "tool_pitch",
+                "tool_yaw0",
+            ],
+            scale=0.5,
+            use_default_offset=True,
+        )
+        self.actions.finger_2_joint_pos = mdp.BinaryJointPositionActionCfg(
+            asset_name="robot_2",
+            joint_names=["tool_yaw1", "tool_yaw2"],
+            open_command_expr={"tool_yaw1": 0.6, "tool_yaw2": 0.6},
+            close_command_expr={"tool_yaw1": 0.08, "tool_yaw2": 0.08},
+        )
 
         # Listens to the required transforms
         marker_cfg = FRAME_MARKER_CFG.copy()
         marker_cfg.markers["frame"].scale = (0.02, 0.02, 0.02)
         marker_cfg.prim_path = "/Visuals/FrameTransformer"
-        self.scene.ee_frame = FrameTransformerCfg(
-            prim_path="{ENV_REGEX_NS}/Robot/kuka_link_0",
+
+        self.scene.ee_1_frame = FrameTransformerCfg(
+            prim_path="{ENV_REGEX_NS}/Robot1/kuka_link_0",
             debug_vis=False,
             visualizer_cfg=marker_cfg,
             target_frames=[
                 FrameTransformerCfg.FrameCfg(
-                    prim_path="{ENV_REGEX_NS}/Robot/tool_tcp0",
+                    prim_path="{ENV_REGEX_NS}/Robot1/tool_tcp0",
+                    name="end_effector",
+                ),
+            ],
+        )
+
+        self.scene.ee_2_frame = FrameTransformerCfg(
+            prim_path="{ENV_REGEX_NS}/Robot2/kuka_link_0",
+            debug_vis=False,
+            visualizer_cfg=marker_cfg,
+            target_frames=[
+                FrameTransformerCfg.FrameCfg(
+                    prim_path="{ENV_REGEX_NS}/Robot2/tool_tcp0",
                     name="end_effector",
                 ),
             ],
