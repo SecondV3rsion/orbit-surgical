@@ -31,10 +31,20 @@ def ee_frame_quat(env: ManagerBasedRLEnv, ee_frame_cfg: SceneEntityCfg = SceneEn
 
     return ee_frame_quat
 
-def gripper_pos(env: ManagerBasedRLEnv, robot_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+def gripper_pos(
+    env: ManagerBasedRLEnv,
+    finger1_name: str = "tool_yaw1",
+    finger2_name: str = "tool_yaw2", 
+    robot_cfg: SceneEntityCfg = SceneEntityCfg("robot")
+) -> torch.Tensor:
+    
     robot: Articulation = env.scene[robot_cfg.name]
-    finger_joint_1 = robot.data.joint_pos[:, -1].clone().unsqueeze(1)
-    finger_joint_2 = -1 * robot.data.joint_pos[:, -2].clone().unsqueeze(1)
+
+    finger1_idx = robot.joint_names.index(finger1_name)
+    finger2_idx = robot.joint_names.index(finger2_name)
+
+    finger_joint_1 = robot.data.joint_pos[:, finger1_idx].clone().unsqueeze(1)
+    finger_joint_2 = -1 * robot.data.joint_pos[:, finger2_idx].clone().unsqueeze(1)
 
     return torch.cat((finger_joint_1, finger_joint_2), dim=1)
 
