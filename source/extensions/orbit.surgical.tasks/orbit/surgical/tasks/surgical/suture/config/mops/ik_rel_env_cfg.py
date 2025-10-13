@@ -23,15 +23,15 @@ class NeedleSutureEnvCfg(joint_pos_env_cfg.NeedleSutureEnvCfg):
 
         # Set MOPS as robot
         # We switch here to a stiffer PD controller for IK tracking to be better.
-        self.scene.robot_1 = MOPS_HIGH_PD_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot1")
-        self.scene.robot_1.init_state = MOPS_HIGH_PD_CFG.InitialStateCfg(
-            pos=(0.0, 0.0, -0.2),  # initial position of the robot base
+        self.scene.robot = MOPS_HIGH_PD_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        self.scene.robot.init_state = MOPS_HIGH_PD_CFG.InitialStateCfg(
+            pos=(0.0, -0.3, -0.2),  # initial position of the robot base
             rot=MOPS_HIGH_PD_CFG.init_state.rot,  # initial orientation of the robot bas
             joint_pos=MOPS_HIGH_PD_CFG.init_state.joint_pos,  # initial joint positions
         )
         # Set actions for the specific robot type (MOPS)
-        self.actions.body_1_joint_pos = DifferentialInverseKinematicsActionCfg(
-            asset_name="robot_1",
+        self.actions.body_joint_pos_1 = DifferentialInverseKinematicsActionCfg(
+            asset_name="robot",
             joint_names=[
                 "kuka_A1",
                 "kuka_A2",
@@ -52,12 +52,12 @@ class NeedleSutureEnvCfg(joint_pos_env_cfg.NeedleSutureEnvCfg):
         # Set MOPS as robot 2
         self.scene.robot_2 = MOPS_HIGH_PD_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot2")
         self.scene.robot_2.init_state = MOPS_HIGH_PD_CFG.InitialStateCfg(
-            pos=(0.0, 0.5, -0.2),  # initial position of the robot base
+            pos=(0.0, 0.3, -0.2),  # initial position of the robot base
             rot=MOPS_HIGH_PD_CFG.init_state.rot,  # initial orientation of the robot bas
             joint_pos=MOPS_HIGH_PD_CFG.init_state.joint_pos,  # initial joint positions
         )
         # Set actions for the specific robot type (MOPS)
-        self.actions.body_2_joint_pos = DifferentialInverseKinematicsActionCfg(
+        self.actions.body_joint_pos_2 = DifferentialInverseKinematicsActionCfg(
             asset_name="robot_2",
             joint_names=[
                 "kuka_A1",

@@ -28,9 +28,9 @@ class NeedleSutureEnvCfg(SutureEnvCfg):
         super().__post_init__()
 
         # Set MOPS as robot 1
-        self.scene.robot_1 = MOPS_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot1")
-        self.scene.robot_1.init_state = MOPS_CFG.InitialStateCfg(
-            pos=(-0.2, 0.0, -0.2),  # initial position of the robot base
+        self.scene.robot = MOPS_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        self.scene.robot.init_state = MOPS_CFG.InitialStateCfg(
+            pos=(0.0, -0.3, -0.2),  # initial position of the robot base
             rot=MOPS_CFG.init_state.rot,  # initial orientation of the robot bas
             joint_pos=MOPS_CFG.init_state.joint_pos,  # initial joint positions
         )
@@ -38,14 +38,14 @@ class NeedleSutureEnvCfg(SutureEnvCfg):
         # Set MOPS as robot 2
         self.scene.robot_2 = MOPS_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot2")
         self.scene.robot_2.init_state = MOPS_CFG.InitialStateCfg(
-            pos=(0.2, 0.5, -0.2),  # initial position of the robot base
+            pos=(0.0, 0.3, -0.2),  # initial position of the robot base
             rot=MOPS_CFG.init_state.rot,  # initial orientation of the robot bas
             joint_pos=MOPS_CFG.init_state.joint_pos,  # initial joint positions
         )
 
         # Set actions for the specific robot type (MOPS)
-        self.actions.body_1_joint_pos = mdp.JointPositionActionCfg(
-            asset_name="robot_1",
+        self.actions.body_joint_pos_1 = mdp.JointPositionActionCfg(
+            asset_name="robot",
             joint_names=[
                 "kuka_A1",
                 "kuka_A2",
@@ -61,7 +61,7 @@ class NeedleSutureEnvCfg(SutureEnvCfg):
             scale=0.5,
             use_default_offset=True,
         )
-        self.actions.finger_1_joint_pos = mdp.BinaryJointPositionActionCfg(
+        self.actions.finger_joint_pos_1 = mdp.BinaryJointPositionActionCfg(
             asset_name="robot",
             joint_names=["tool_yaw1", "tool_yaw2"],
             open_command_expr={"tool_yaw1": 0.6, "tool_yaw2": 0.6},
@@ -69,7 +69,7 @@ class NeedleSutureEnvCfg(SutureEnvCfg):
         )
 
         # Set actions for robot 2 (MOPS)
-        self.actions.body_2_joint_pos = mdp.JointPositionActionCfg(
+        self.actions.body_joint_pos_2 = mdp.JointPositionActionCfg(
             asset_name="robot_2",
             joint_names=[
                 "kuka_A1",
@@ -86,7 +86,7 @@ class NeedleSutureEnvCfg(SutureEnvCfg):
             scale=0.5,
             use_default_offset=True,
         )
-        self.actions.finger_2_joint_pos = mdp.BinaryJointPositionActionCfg(
+        self.actions.finger_joint_pos_2 = mdp.BinaryJointPositionActionCfg(
             asset_name="robot_2",
             joint_names=["tool_yaw1", "tool_yaw2"],
             open_command_expr={"tool_yaw1": 0.6, "tool_yaw2": 0.6},
@@ -98,19 +98,19 @@ class NeedleSutureEnvCfg(SutureEnvCfg):
         marker_cfg.markers["frame"].scale = (0.02, 0.02, 0.02)
         marker_cfg.prim_path = "/Visuals/FrameTransformer"
 
-        self.scene.ee_1_frame = FrameTransformerCfg(
-            prim_path="{ENV_REGEX_NS}/Robot1/kuka_link_0",
+        self.scene.ee_frame_1 = FrameTransformerCfg(
+            prim_path="{ENV_REGEX_NS}/Robot/kuka_link_0",
             debug_vis=False,
             visualizer_cfg=marker_cfg,
             target_frames=[
                 FrameTransformerCfg.FrameCfg(
-                    prim_path="{ENV_REGEX_NS}/Robot1/tool_tcp0",
+                    prim_path="{ENV_REGEX_NS}/Robot/tool_tcp0",
                     name="end_effector",
                 ),
             ],
         )
 
-        self.scene.ee_2_frame = FrameTransformerCfg(
+        self.scene.ee_frame_2 = FrameTransformerCfg(
             prim_path="{ENV_REGEX_NS}/Robot2/kuka_link_0",
             debug_vis=False,
             visualizer_cfg=marker_cfg,
