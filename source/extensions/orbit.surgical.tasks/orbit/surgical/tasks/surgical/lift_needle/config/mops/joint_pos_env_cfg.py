@@ -6,7 +6,7 @@
 from orbit.surgical.assets import ORBITSURGICAL_ASSETS_DATA_DIR
 
 from orbit.surgical.tasks.surgical.lift_needle import mdp
-from orbit.surgical.tasks.surgical.lift_needle.lift_env_mimic_cfg import LiftEnvCfg
+from orbit.surgical.tasks.surgical.lift_needle.lift_env_rl_cfg import LiftEnvCfg
 
 from isaaclab.assets import RigidObjectCfg
 from isaaclab.sensors import FrameTransformerCfg
@@ -49,7 +49,6 @@ class NeedleLiftEnvCfg(LiftEnvCfg):
                 "kuka_A7",
                 "tool_roll",
                 "tool_pitch",
-                "tool_yaw0",
             ],
             scale=0.5,
             use_default_offset=True,
@@ -66,7 +65,7 @@ class NeedleLiftEnvCfg(LiftEnvCfg):
         # Set Suture Needle as object
         self.scene.object = RigidObjectCfg(
             prim_path="{ENV_REGEX_NS}/Object",
-            init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.2, 0.015), rot=(0.7071068, 0, 0, 0.7071068)),
+            init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.0, 0.0), rot=(0.7071068, 0, 0, 0.7071068)),
             spawn=UsdFileCfg(
                 usd_path=f"{ORBITSURGICAL_ASSETS_DATA_DIR}/Props/Surgical_needle/needle.usd",
                 scale=(0.4, 0.4, 0.4),
@@ -93,6 +92,30 @@ class NeedleLiftEnvCfg(LiftEnvCfg):
                 FrameTransformerCfg.FrameCfg(
                     prim_path="{ENV_REGEX_NS}/Robot/tool_tcp0",
                     name="end_effector",
+                ),
+            ],
+        )
+
+        self.scene.finger_1_frame = FrameTransformerCfg(
+            prim_path="{ENV_REGEX_NS}/Robot/kuka_link_0",
+            debug_vis=False,
+            visualizer_cfg=marker_cfg,
+            target_frames=[
+                FrameTransformerCfg.FrameCfg(
+                    prim_path="{ENV_REGEX_NS}/Robot/tool_tcp1",
+                    name="finger_1",
+                ),
+            ],
+        )
+
+        self.scene.finger_2_frame = FrameTransformerCfg(
+            prim_path="{ENV_REGEX_NS}/Robot/kuka_link_0",
+            debug_vis=False,
+            visualizer_cfg=marker_cfg,
+            target_frames=[
+                FrameTransformerCfg.FrameCfg(
+                    prim_path="{ENV_REGEX_NS}/Robot/tool_tcp2",
+                    name="finger_2",
                 ),
             ],
         )

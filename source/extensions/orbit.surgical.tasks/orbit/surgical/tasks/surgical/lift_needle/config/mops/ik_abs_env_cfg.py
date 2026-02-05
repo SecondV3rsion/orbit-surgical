@@ -43,7 +43,6 @@ class NeedleLiftEnvCfg(joint_pos_env_cfg.NeedleLiftEnvCfg):
                 "kuka_A7",
                 "tool_roll",
                 "tool_pitch",
-                "tool_yaw0",
             ],
             body_name="tool_tcp0",
             controller=DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, ik_method="dls"),
