@@ -10,7 +10,7 @@ The following configurations are available:
 from orbit.surgical.assets import ORBITSURGICAL_ASSETS_DATA_DIR
 
 import isaaclab.sim as sim_utils
-from isaaclab.actuators import ImplicitActuatorCfg
+from isaaclab.actuators import ImplicitActuatorCfg, IdealPDActuatorCfg
 from isaaclab.assets.articulation import ArticulationCfg
 from isaaclab.utils.math import quat_from_euler_xyz
 import torch
@@ -18,6 +18,8 @@ import torch
 ##
 # Configuration
 ##
+
+# skripta za testiranje actuatorjev: https://isaac-sim.github.io/IsaacLab/v2.2.0/source/tutorials/01_assets/run_articulation.html
 
 # Given real-world position
 world_to_base_pos = [0, 0, 0]
@@ -40,22 +42,32 @@ initial_joint_positions = {
     "tool_roll": 0.01,
     "tool_pitch": 0.01,
     "tool_yaw0": 0.01,
-    "tool_yaw1": -0.09,
-    "tool_yaw2": 0.09,
+    "tool_yaw1": 0.6,
+    "tool_yaw2": 0.6,
 }
 
 
 MOPS_CFG = ArticulationCfg(
     spawn=sim_utils.UsdFileCfg(
-        usd_path=f"{ORBITSURGICAL_ASSETS_DATA_DIR}/Robots/MOPS/mops.usd",
+        usd_path=f"{ORBITSURGICAL_ASSETS_DATA_DIR}/Robots/MOPS/mops_V2.usd",
         activate_contact_sensors=False,
         rigid_props=sim_utils.RigidBodyPropertiesCfg(
-            disable_gravity=False,
-            max_depenetration_velocity=5.0,
+            disable_gravity=True,
+            retain_accelerations=True,
+            linear_damping=0.0,
+            angular_damping=0.0,
+            max_linear_velocity=1000.0,
+            max_angular_velocity=1000.0,
+            max_depenetration_velocity=1000.0,
         ),
         articulation_props=sim_utils.ArticulationRootPropertiesCfg(
-            enabled_self_collisions=False, solver_position_iteration_count=8, solver_velocity_iteration_count=2
+            enabled_self_collisions=False, 
+            solver_position_iteration_count=8, 
+            solver_velocity_iteration_count=1,
+            sleep_threshold=0.005,
+            stabilization_threshold=0.0005,
         ),
+        joint_drive_props=sim_utils.JointDrivePropertiesCfg(drive_type="force"),
     ),
     init_state=ArticulationCfg.InitialStateCfg(
         joint_pos=initial_joint_positions,
@@ -65,18 +77,22 @@ MOPS_CFG = ArticulationCfg(
     actuators={
         "kuka": ImplicitActuatorCfg(
             joint_names_expr=[
-                "kuka_A1",
-                "kuka_A2",
-                "kuka_A3",
-                "kuka_A4",
-                "kuka_A5",
-                "kuka_A6",
-                "kuka_A7",
+                "kuka_A(1|2|3|4|5|6|7)",
             ],
-            velocity_limit_sim=2.175,
-            effort_limit_sim=87.0,
-            stiffness=80.0,
-            damping=4.0,
+            effort_limit_sim=300.0,
+            stiffness={
+                "kuka_A(1|2|3|4)": 300.0,
+                "kuka_A5": 100.0,
+                "kuka_A6": 50.0,
+                "kuka_A7": 25.0,
+            },
+            damping={
+                "kuka_A(1|2|3|4)": 45.0,
+                "kuka_A5": 20.0,
+                "kuka_A6": 15.0,
+                "kuka_A7": 15.0,
+            },
+            friction=1.0,
         ),
         "tool": ImplicitActuatorCfg(
             joint_names_expr=[
@@ -87,9 +103,8 @@ MOPS_CFG = ArticulationCfg(
                 "tool_yaw2",
             ],
             effort_limit_sim=200.0,
-            velocity_limit_sim=6.0,
             stiffness=400.0,
-            damping=40.0,
+            damping=10.0,
         ),
     },
     soft_joint_pos_limit_factor=1.0,
@@ -99,8 +114,51 @@ MOPS_CFG = ArticulationCfg(
 
 MOPS_HIGH_PD_CFG = MOPS_CFG.copy()
 MOPS_HIGH_PD_CFG.spawn.rigid_props.disable_gravity = True
-MOPS_HIGH_PD_CFG.actuators["kuka"].stiffness = 800.0
-MOPS_HIGH_PD_CFG.actuators["kuka"].damping = 120.0
+MOPS_HIGH_PD_CFG.actuators={
+        "kuka": ImplicitActuatorCfg(
+            joint_names_expr=[
+                "kuka_A(1|2|3|4|5|6|7)",
+            ],
+            effort_limit_sim=300.0,
+            stiffness={
+                "kuka_A(1|2|3|4)": 600.0,
+                "kuka_A5": 300.0,
+                "kuka_A6": 150.0,
+                "kuka_A7": 50.0,
+            },
+            damping={
+                "kuka_A(1|2|3|4)": 120.0,
+                "kuka_A5": 60.0,
+                "kuka_A6": 30.0,
+                "kuka_A7": 30.0,
+            },
+            friction=1.0,
+        ),
+        "tool": ImplicitActuatorCfg(
+            joint_names_expr=[
+                "tool_roll",
+                "tool_pitch",
+                "tool_yaw0",
+                "tool_yaw1",
+                "tool_yaw2",
+            ],
+            effort_limit_sim=200.0,
+            stiffness={
+                "tool_roll": 400.0,
+                "tool_pitch": 400.0,
+                "tool_yaw0": 400.0,
+                "tool_yaw1": 400.0,
+                "tool_yaw2": 400.0,
+            },
+            damping={
+                "tool_roll": 40.0,
+                "tool_pitch": 40.0,
+                "tool_yaw0": 40.0,
+                "tool_yaw1": 10.0,
+                "tool_yaw2": 10.0,
+            },
+        ),
+    }
 """Configuration of MOPS robot arm with stiffer PD control.
 
 This configuration is useful for task-space control using differential IK.
