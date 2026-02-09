@@ -16,6 +16,7 @@ from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.scene import InteractiveSceneCfg
 from isaaclab.sensors.frame_transformer.frame_transformer_cfg import FrameTransformerCfg
 from isaaclab.sim.spawners.from_files.from_files_cfg import GroundPlaneCfg, UsdFileCfg
+from isaaclab.sim.schemas.schemas_cfg import RigidBodyPropertiesCfg
 from isaaclab.utils import configclass
 
 from . import mdp
@@ -24,22 +25,38 @@ from . import mdp
 # Scene definition
 ##
 
-DEFAULT_ROT_TCP = [-np.pi, np.pi/2, 0] # roll, pitch, yaw
-
 @configclass
 class ObjectTableSceneCfg(InteractiveSceneCfg):
-    """Configuration for the lift scene with a robot and an object.
+    """Configuration for the suture scene with a robot and an object.
     This is the abstract base implementation, the exact scene is defined in the derived classes
     which need to set the target object, robot, and end-effector frames.
     """
 
     # robots: will be populated by agent env cfg
     robot: ArticulationCfg = MISSING
+    robot_2: ArticulationCfg = MISSING
     # end-effector sensor: will be populated by agent env cfg
-    ee_frame: FrameTransformerCfg = MISSING
-    # target object: will be populated by agent env cfg
-    object: RigidObjectCfg = MISSING
+    ee_frame_1: FrameTransformerCfg = MISSING
+    ee_frame_2: FrameTransformerCfg = MISSING
+    # needle
+    object: RigidObjectCfg = RigidObjectCfg(
+            prim_path="{ENV_REGEX_NS}/Object",
+            init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.2, 0.015), rot=(0.7071068, 0, 0, 0.7071068)),
+            spawn=UsdFileCfg(
+                usd_path=f"{ORBITSURGICAL_ASSETS_DATA_DIR}/Props/Surgical_needle/needle.usd",
+                scale=(0.4, 0.4, 0.4),
+                rigid_props=RigidBodyPropertiesCfg(
+                    solver_position_iteration_count=16,
+                    solver_velocity_iteration_count=8,
+                    max_angular_velocity=200,
+                    max_linear_velocity=200,
+                    max_depenetration_velocity=1.0,
+                    disable_gravity=False,
+                ),
+            ),
+        )
 
+    # Table
     table = AssetBaseCfg(
         prim_path="{ENV_REGEX_NS}/Table",
         init_state=AssetBaseCfg.InitialStateCfg(pos=(0.7, 0.0, -0.457), rot=(0.7071068, 0, 0, 0.7071068)),
@@ -59,40 +76,21 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
         spawn=sim_utils.DomeLightCfg(color=(0.75, 0.75, 0.75), intensity=3000.0),
     )
 
-
 ##
 # MDP settings
 ##
 
 
 @configclass
-class CommandsCfg:
-    """Command terms for the MDP."""
-
-    object_pose = mdp.UniformPoseCommandCfg(
-        asset_name="robot",
-        body_name=MISSING,  # will be set by agent env cfg
-        resampling_time_range=(5.0, 5.0),
-        debug_vis=False,
-        ranges=mdp.UniformPoseCommandCfg.Ranges(
-            pos_x=(0.60, 0.60),
-            pos_y=(0.0, 0.0),
-            pos_z=(0.3, 0.3),
-            roll=(DEFAULT_ROT_TCP[0], DEFAULT_ROT_TCP[0]),
-            pitch=(DEFAULT_ROT_TCP[1], DEFAULT_ROT_TCP[1]),
-            yaw=(DEFAULT_ROT_TCP[2], DEFAULT_ROT_TCP[2]),
-        ),
-    )
-
-    object_pose.current_pose_visualizer_cfg.markers["frame"].scale = (0.01, 0.01, 0.01)
-
-@configclass
 class ActionsCfg:
     """Action specifications for the MDP."""
 
     # will be set by agent env cfg
-    body_joint_pos: mdp.JointPositionActionCfg = MISSING
-    finger_joint_pos: mdp.BinaryJointPositionActionCfg = MISSING
+    body_joint_pos_1: mdp.JointPositionActionCfg = MISSING
+    finger_joint_pos_1: mdp.BinaryJointPositionActionCfg = MISSING
+    body_joint_pos_2: mdp.JointPositionActionCfg = MISSING
+    finger_joint_pos_2: mdp.BinaryJointPositionActionCfg = MISSING
+
 
 
 @configclass
@@ -103,15 +101,25 @@ class ObservationsCfg:
     class PolicyCfg(ObsGroup):
         """Observations for policy group."""
 
-        joint_pos = ObsTerm(func=mdp.joint_pos_rel)
-        joint_vel = ObsTerm(func=mdp.joint_vel_rel)
-        object_position = ObsTerm(func=mdp.object_position_in_robot_root_frame)
-        target_object_position = ObsTerm(func=mdp.generated_commands, params={"command_name": "object_pose"})
-        actions = ObsTerm(func=mdp.last_action)
+        # Robot 1
+        joint_pos_1 = ObsTerm(func=mdp.joint_pos_rel, params={"asset_cfg": SceneEntityCfg("robot")})
+        joint_vel_1 = ObsTerm(func=mdp.joint_vel_rel, params={"asset_cfg": SceneEntityCfg("robot")})
+        eef_pos_1 = ObsTerm(func=mdp.ee_frame_pos, params={"ee_frame_cfg": SceneEntityCfg("ee_frame_1")})
+        eef_quat_1 = ObsTerm(func=mdp.ee_frame_quat, params={"ee_frame_cfg": SceneEntityCfg("ee_frame_1")})
+        gripper_pos_1 = ObsTerm(func=mdp.gripper_pos, params={"finger1_name": "tool_yaw1", "finger2_name": "tool_yaw2", "robot_cfg": SceneEntityCfg("robot")})
 
-        eef_pos = ObsTerm(func=mdp.ee_frame_pos)
-        eef_quat = ObsTerm(func=mdp.ee_frame_quat)
-        gripper_pos = ObsTerm(func=mdp.gripper_pos, params={"finger1_name": "tool_yaw1", "finger2_name": "tool_yaw2", "robot_cfg": SceneEntityCfg("robot")})
+        # Robot 2
+        joint_pos_2 = ObsTerm(func=mdp.joint_pos_rel, params={"asset_cfg": SceneEntityCfg("robot_2")})
+        joint_vel_2 = ObsTerm(func=mdp.joint_vel_rel, params={"asset_cfg": SceneEntityCfg("robot_2")})
+        eef_pos_2 = ObsTerm(func=mdp.ee_frame_pos, params={"ee_frame_cfg": SceneEntityCfg("ee_frame_2")})
+        eef_quat_2 = ObsTerm(func=mdp.ee_frame_quat, params={"ee_frame_cfg": SceneEntityCfg("ee_frame_2")})
+        gripper_pos_2 = ObsTerm(func=mdp.gripper_pos, params={"finger1_name": "tool_yaw1", "finger2_name": "tool_yaw2", "robot_cfg": SceneEntityCfg("robot_2")})
+
+        # Object and suture info
+        object_position = ObsTerm(func=mdp.object_position_in_robot_root_frame, params={"object_cfg": SceneEntityCfg("object"), "robot_cfg": SceneEntityCfg("robot")})
+
+        # Last actions for continuity
+        actions = ObsTerm(func=mdp.last_action)
 
         def __post_init__(self):
             self.enable_corruption = False
@@ -125,7 +133,7 @@ class ObservationsCfg:
             func=mdp.object_grasped,
             params={
                 "robot_cfg": SceneEntityCfg("robot"),
-                "ee_frame_cfg": SceneEntityCfg("ee_frame"),
+                "ee_frame_cfg": SceneEntityCfg("ee_frame_1"),
                 "object_cfg": SceneEntityCfg("object"),
             },
         )
@@ -137,8 +145,6 @@ class ObservationsCfg:
             },
         )
 
-        goal_reached = ObsTerm(func=mdp.object_reached_goal)
-
         def __post_init__(self):
             self.enable_corruption = False
             self.concatenate_terms = False
@@ -146,7 +152,6 @@ class ObservationsCfg:
     # observation groups
     policy: PolicyCfg = PolicyCfg()
     subtask: SubtaskCfg = SubtaskCfg()
-
 
 @configclass
 class EventCfg:
@@ -164,37 +169,6 @@ class EventCfg:
         },
     )
 
-
-@configclass
-class RewardsCfg:
-    """Reward terms for the MDP."""
-
-    reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.1}, weight=2.0)
-
-    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.02}, weight=15.0)
-
-    object_goal_tracking = RewTerm(
-        func=mdp.object_goal_distance,
-        params={"std": 0.3, "minimal_height": 0.02, "command_name": "object_pose"},
-        weight=16.0,
-    )
-
-    object_goal_tracking_fine_grained = RewTerm(
-        func=mdp.object_goal_distance,
-        params={"std": 0.05, "minimal_height": 0.02, "command_name": "object_pose"},
-        weight=5.0,
-    )
-
-    # action penalty
-    action_rate = RewTerm(func=mdp.action_rate_l2, weight=-1e-3)
-
-    joint_vel = RewTerm(
-        func=mdp.joint_vel_l2,
-        weight=-1e-4,
-        params={"asset_cfg": SceneEntityCfg("robot")},
-    )
-
-
 @configclass
 class TerminationsCfg:
     """Termination terms for the MDP."""
@@ -205,23 +179,8 @@ class TerminationsCfg:
         func=mdp.root_height_below_minimum, params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("object")}
     )
 
-    success = DoneTerm(func=mdp.object_reached_goal)
+    #success = DoneTerm(func=mdp.object_reached_goal)
                        
-
-@configclass
-class CurriculumCfg:
-    """Curriculum terms for the MDP."""
-
-    # Increase penalty for action rate gradually
-    action_rate = CurrTerm(
-        func=mdp.modify_reward_weight, params={"term_name": "action_rate", "weight": -1e-1, "num_steps": 10000}
-    )
-
-    # Increase penalty for joint velocities gradually
-    joint_vel = CurrTerm(
-        func=mdp.modify_reward_weight, params={"term_name": "joint_vel", "weight": -1e-1, "num_steps": 10000}
-    )
-
 
 ##
 # Environment configuration
@@ -229,28 +188,31 @@ class CurriculumCfg:
 
 
 @configclass
-class LiftEnvCfg(ManagerBasedRLEnvCfg):
-    """Configuration for the lifting environment."""
+class SutureEnvCfg(ManagerBasedRLEnvCfg):
+    """Configuration for the suturing environment."""
 
     # Scene settings
     scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=512, env_spacing=2.5)
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()
-    commands: CommandsCfg = CommandsCfg()
-    # MDP settings
-    rewards: RewardsCfg = RewardsCfg()
-    terminations: TerminationsCfg = TerminationsCfg()
     events: EventCfg = EventCfg()
-    curriculum: CurriculumCfg = CurriculumCfg()
+    # MDP settings
+    terminations: TerminationsCfg = TerminationsCfg()
+
+
+    # Unused managers
+    commands = None
+    rewards = None
+    curriculum = None
 
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 4
-        self.sim.render_interval = self.decimation
-        self.episode_length_s = 5.0
+        self.decimation = 5
+        self.episode_length_s = 30.0
         # simulation settings
-        self.sim.dt = 1.0 / 200.0
+        self.sim.dt = 0.01  # 100Hz
+        self.sim.render_interval = 2
         self.viewer.eye = (4, -0.6, 0.3)
         self.viewer.lookat = (0.0, 0.0, 0.04)

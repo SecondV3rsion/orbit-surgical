@@ -1,7 +1,7 @@
 {
     "algo_name": "bc",
     "experiment": {
-        "name": "bc_rnn_low_dim",
+        "name": "bc_mlp_rnn",
         "validate": false,
         "logging": {
             "terminal_output_to_txt": true,
@@ -40,7 +40,7 @@
         "goal_mode": null,
         "cuda": true,
         "batch_size": 100,
-        "num_epochs": 1000,
+        "num_epochs": 2000,
         "seed": 101
     },
     "algo": {
@@ -63,7 +63,7 @@
             "l1_weight": 0.0,
             "cos_weight": 0.0
         },
-        "actor_layer_dims": [],
+        "actor_layer_dims": [256,128,64],
         "gmm": {
             "enabled": true,
             "num_modes": 5,
