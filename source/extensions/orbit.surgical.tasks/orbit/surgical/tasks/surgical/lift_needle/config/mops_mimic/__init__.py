@@ -24,7 +24,6 @@ gym.register(
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
     kwargs={
         "env_cfg_entry_point": ik_rel_env_cfg.NeedleLiftEnvCfg,
-        "rsl_rl_cfg_entry_point": agents.rsl_rl_rnn_cfg.LiftNeedlePPORunnerCfg,
         "robomimic_bc_cfg_entry_point": os.path.join(agents.__path__[0], "robomimic/bc_rnn_low_dim.json"),
     },
     disable_env_checker=True,
@@ -32,7 +31,7 @@ gym.register(
 
 gym.register(
     id="Isaac-Lift-Needle-MOPS-Mimic-v0",
-    entry_point="orbit.surgical.tasks.surgical.lift_needle.config.mops.ik_rel_mimic_env:NeedleLiftMimicEnv",
+    entry_point="orbit.surgical.tasks.surgical.lift_needle.config.mops_mimic.ik_rel_mimic_env:NeedleLiftMimicEnv",
     kwargs={
         "env_cfg_entry_point": ik_rel_mimic_env_cfg.NeedleLiftMimicEnvCfg,
     },

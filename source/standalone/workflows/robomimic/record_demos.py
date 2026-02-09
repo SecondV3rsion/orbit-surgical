@@ -60,6 +60,7 @@ parser.add_argument(
     default=False,
     help="Enable Pinocchio.",
 )
+parser.add_argument("--sensitivity", type=float, default=1.0, help="Sensitivity factor.")
 
 """Rest everything follows."""
 
@@ -297,7 +298,7 @@ def main():
         device_name = device_name.lower()
         nonlocal running_recording_instance
         if device_name == "keyboard":
-            return Se3Keyboard(pos_sensitivity=0.01, rot_sensitivity=0.05)
+            return Se3Keyboard(pos_sensitivity=0.005 * args_cli.sensitivity, rot_sensitivity=0.05 * args_cli.sensitivity)
         elif device_name == "spacemouse":
             return Se3SpaceMouse(pos_sensitivity=0.2, rot_sensitivity=0.5)
         elif "dualhandtracking_abs" in device_name and "GR1T2" in env.cfg.env_name:

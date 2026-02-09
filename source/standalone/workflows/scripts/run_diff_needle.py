@@ -86,6 +86,23 @@ class TableTopSceneCfg(InteractiveSceneCfg):
         spawn=UsdFileCfg(usd_path=f"{ORBITSURGICAL_ASSETS_DATA_DIR}/Props/Table/table.usd"),
     )
 
+    object = RigidObjectCfg(
+            prim_path="{ENV_REGEX_NS}/Object",
+            init_state=RigidObjectCfg.InitialStateCfg(pos=(0.6, 0.0, 0.0), rot=(0.7071068, 0, 0, 0.7071068)),
+            spawn=UsdFileCfg(
+                usd_path=f"{ORBITSURGICAL_ASSETS_DATA_DIR}/Props/Surgical_needle/needle.usd",
+                scale=(0.4, 0.4, 0.4),
+                rigid_props=RigidBodyPropertiesCfg(
+                    solver_position_iteration_count=16,
+                    solver_velocity_iteration_count=8,
+                    max_angular_velocity=200,
+                    max_linear_velocity=200,
+                    max_depenetration_velocity=1.0,
+                    disable_gravity=False,
+                ),
+            ),
+        )
+
     # articulation
     if args_cli.robot == "mops":
         robot = MOPS_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
@@ -104,6 +121,7 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
     # Extract scene entities
     # note: we only do this here for readability.
     robot = scene["robot"]
+    object = scene["object"]
 
     # Create controller
     diff_ik_cfg = DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, ik_method="dls")
@@ -115,18 +133,17 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
     ee_marker = VisualizationMarkers(frame_marker_cfg.replace(prim_path="/Visuals/ee_current"))
     goal_marker = VisualizationMarkers(frame_marker_cfg.replace(prim_path="/Visuals/ee_goal"))
 
-    # Define goals for the arm
-    ee_goals = [
-        [0.5, 0, 0.5, 0.0, 1.0, 0.0, 0.0],
-        [0.6, 0, 0.01, 0.0, 0.707, 0.0, -0.707],
-        [0.6, 0, 0.3, 0.0, 0.707, 0.0, -0.707],
-    ]
-    ee_goals = torch.tensor(ee_goals, device=sim.device)
-    # Track the given command
-    current_goal_idx = 0
+    # Define goals for the arm x y z and orientation as quaternion w x y z
+    object_goal = torch.tensor([0.6, 0, 0.3, 0.0, 0.707, 0.0, -0.707], device=sim.device)
+    object_pose_w = object.data.default_root_state.clone()[:,0:7]
+    # object_pose_w[:,2] += 0.002
+    object_pose_w[:,3:7] = object_goal[3:7]
+
+    root_state = object.data.root_state_w.clone()
+
     # Create buffers to store actions
     ik_commands = torch.zeros(scene.num_envs, diff_ik_controller.action_dim, device=robot.device)
-    ik_commands[:] = ee_goals[current_goal_idx]
+    ik_commands[:] = object_goal
 
     # Specify robot-specific parameters
     if args_cli.robot == "mops" or args_cli.robot == "mops_high_pd":
@@ -148,27 +165,33 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
 
     # Define simulation stepping
     sim_dt = sim.get_physics_dt()
-    count = 0
+    state = 0
     # Simulation loop
+    count = 0
     while simulation_app.is_running():
         # reset
-        if count % 200 == 0:
+        if state == 0:
             # reset time
             count = 0
+            # reset object
+            # write root state to simulation
+            object.write_root_pose_to_sim(root_state[:, :7])
+            object.write_root_velocity_to_sim(root_state[:, 7:])
+            object.reset()
             # reset joint state
             joint_pos = robot.data.default_joint_pos.clone()
             joint_vel = robot.data.default_joint_vel.clone()
             robot.write_joint_state_to_sim(joint_pos, joint_vel)
             robot.reset()
             # reset actions
-            ik_commands[:] = ee_goals[current_goal_idx]
+            ik_commands[:] = object_pose_w
             joint_pos_des = joint_pos[:, robot_entity_cfg.joint_ids].clone()
             # reset controller
             diff_ik_controller.reset()
             diff_ik_controller.set_command(ik_commands)
-            # change goal
-            current_goal_idx = (current_goal_idx + 1) % len(ee_goals)
-        else:
+            # switch state
+            state = 1
+        elif state == 1:
             # obtain quantities from simulation
             jacobian = robot.root_physx_view.get_jacobians()[:, ee_jacobi_idx, :, robot_entity_cfg.joint_ids]
             ee_pose_w = robot.data.body_pose_w[:, robot_entity_cfg.body_ids[0]]
@@ -181,8 +204,42 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
             # compute the joint commands
             joint_pos_des = diff_ik_controller.compute(ee_pos_b, ee_quat_b, jacobian, joint_pos)
 
-        history["target"].append(joint_pos_des.clone())
+            ee_object_diff = ee_pos_b - ik_commands[:, 0:3]
 
+            if torch.norm(ee_object_diff) < 0.01:
+                state = 2
+        elif state == 2:
+            # hold position
+            joint_pos_des = robot.data.joint_pos[:, robot_entity_cfg.joint_ids].clone()
+            # close grasper
+            joint_pos_des[:, -2:] = 0.08
+
+            # reset actions
+            ik_commands[:] = object_goal
+            # reset controller
+            diff_ik_controller.reset()
+            diff_ik_controller.set_command(ik_commands)
+            
+            if robot.data.joint_pos[0, -2] < 0.1:
+                state = 3
+        elif state == 3:
+            # obtain quantities from simulation
+            jacobian = robot.root_physx_view.get_jacobians()[:, ee_jacobi_idx, :, robot_entity_cfg.joint_ids]
+            ee_pose_w = robot.data.body_pose_w[:, robot_entity_cfg.body_ids[0]]
+            root_pose_w = robot.data.root_pose_w
+            joint_pos = robot.data.joint_pos[:, robot_entity_cfg.joint_ids]
+            # compute frame in root frame
+            ee_pos_b, ee_quat_b = subtract_frame_transforms(
+                root_pose_w[:, 0:3], root_pose_w[:, 3:7], ee_pose_w[:, 0:3], ee_pose_w[:, 3:7]
+            )
+            # compute the joint commands
+            joint_pos_des = diff_ik_controller.compute(ee_pos_b, ee_quat_b, jacobian, joint_pos)
+
+            ee_goal_diff = ee_pos_b - object_goal[0:3]
+            if torch.norm(ee_goal_diff) < 0.03:
+                state = 0
+
+        history["target"].append(joint_pos_des.clone())
         # apply actions
         robot.set_joint_position_target(joint_pos_des, joint_ids=robot_entity_cfg.joint_ids)
         scene.write_data_to_sim()
@@ -194,16 +251,16 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
         scene.update(sim_dt)
 
         history["actual"].append(robot.data.joint_pos.clone())
-
-        count += 1
-        # if count % 200 == 0:
-        #     plot_joint_positions(history)
-
         # obtain quantities from simulation
         ee_pose_w = robot.data.body_state_w[:, robot_entity_cfg.body_ids[0], 0:7]
         # update marker positions
         ee_marker.visualize(ee_pose_w[:, 0:3], ee_pose_w[:, 3:7])
         goal_marker.visualize(ik_commands[:, 0:3] + scene.env_origins, ik_commands[:, 3:7])
+
+        count += 1
+        # if count % 170 == 0:
+        #     #plot_joint_errors(history)
+        #     plot_joint_positions(history)
 
 def plot_joint_positions(joint_positions1, joint_positions2=None, joint_positions3=None):
     import matplotlib.pyplot as plt
@@ -240,6 +297,41 @@ def plot_joint_positions(joint_positions1, joint_positions2=None, joint_position
         plot_one_robot(joint_positions3, "Robot 3")
 
     plt.show()
+
+def plot_joint_errors(joint_positions1, joint_positions2=None, joint_positions3=None):
+    import matplotlib.pyplot as plt
+    import torch
+
+    robots = [joint_positions1, joint_positions2, joint_positions3]
+    robots = [r for r in robots if r is not None]  # keep only valid
+
+    if not robots:
+        print("No robot data provided")
+        return
+
+    # Assume all robots have the same number of joints and timesteps
+    num_joints = robots[0]["target"][0].shape[1]
+    T = len(robots[0]["target"])
+    timesteps = range(T)
+
+    plt.figure(figsize=(10, num_joints * 2))
+
+    # For each joint, create a subplot
+    for j in range(num_joints):
+        plt.subplot(num_joints, 1, j + 1)
+        for i, joint_positions in enumerate(robots):
+            target = torch.stack(joint_positions["target"]).detach().cpu()   # (T,1,N)
+            actual = torch.stack(joint_positions["actual"]).detach().cpu()   # (T,1,N)
+            error = target[:, 0, j] - actual[:, 0, j]                        # (T,)
+            plt.plot(timesteps, error, label=f"Robot {i+1}")
+            plt.grid(True)
+            plt.legend(loc='upper right')
+
+    plt.suptitle(f"Joint Errors", fontsize=12)
+    plt.xlabel("Time Step")
+    plt.ylabel("Error (rad)")
+    plt.tight_layout(rect=[0, 0, 1, 0.96])  # leave space for title
+    plt.show()         
 
 def main():
     """Main function."""

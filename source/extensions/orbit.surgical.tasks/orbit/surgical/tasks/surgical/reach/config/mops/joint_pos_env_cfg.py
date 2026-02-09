@@ -49,8 +49,12 @@ class MOPSReachEnvCfg(ReachEnvCfg):
         # override rewards
         self.rewards.end_effector_position_tracking.params["asset_cfg"].body_names = ["tool_tcp0"]
         self.rewards.end_effector_orientation_tracking.params["asset_cfg"].body_names = ["tool_tcp0"]
+        self.rewards.end_effector_position_tracking_fine_grained.params["asset_cfg"].body_names = ["tool_tcp0"]
+        
         #override terminations
-        self.terminations.reached_goal.params["asset_cfg"].body_names = ["tool_tcp0"]
+        
+        #self.terminations.reached_goal.params["asset_cfg"].body_names = ["tool_tcp0"]
+
         # override observations
         # override actions
         self.actions.arm_action = mdp.JointPositionActionCfg(
@@ -67,7 +71,7 @@ class MOPSReachEnvCfg(ReachEnvCfg):
                 "tool_pitch",
                 "tool_yaw0",
             ],
-            scale=1,
+            scale=0.5,
             use_default_offset=True,
         )
         # override command generator body
@@ -85,15 +89,6 @@ class MOPSReachEnvCfg(ReachEnvCfg):
                 pitch=(DEFAULT_ROT_TCP[1] - np.pi/4, DEFAULT_ROT_TCP[1] + np.pi/4),
                 yaw=(DEFAULT_ROT_TCP[2] - np.pi/4, DEFAULT_ROT_TCP[2] + np.pi/4),
             ),
-        )
-
-        self.events.reset_robot_joints = EventTerm(
-            func=mdp.reset_joints_by_scale,
-            mode="reset",
-            params={
-                "position_range": (0.5, 1.5),
-                "velocity_range": (0.0, 0.0),
-            },
         )
 
         # Listens to the required transforms
