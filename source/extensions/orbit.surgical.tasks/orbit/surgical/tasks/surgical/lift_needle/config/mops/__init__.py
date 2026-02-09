@@ -8,7 +8,6 @@ import gymnasium as gym
 import os
 
 from . import agents, ik_abs_env_cfg, ik_rel_env_cfg, joint_pos_env_cfg
-from . import ik_rel_mimic_env_cfg, ik_rel_mimic_env
 
 ##
 # Register Gym environments.
@@ -23,18 +22,7 @@ gym.register(
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
     kwargs={
         "env_cfg_entry_point": joint_pos_env_cfg.NeedleLiftEnvCfg,
-        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.LiftNeedlePPORunnerCfg,
-        "robomimic_bc_cfg_entry_point": os.path.join(agents.__path__[0], "robomimic/bc_rnn_low_dim.json"),
-    },
-    disable_env_checker=True,
-)
-
-gym.register(
-    id="Isaac-Lift-Needle-MOPS-Play-v0",
-    entry_point="isaaclab.envs:ManagerBasedRLEnv",
-    kwargs={
-        "env_cfg_entry_point": joint_pos_env_cfg.NeedleLiftEnvCfg_PLAY,
-        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.LiftNeedlePPORunnerCfg,
+        "rsl_rl_cfg_entry_point": agents.rsl_rl_rnn_cfg.LiftNeedlePPORunnerCfg,
     },
     disable_env_checker=True,
 )
@@ -48,18 +36,7 @@ gym.register(
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
     kwargs={
         "env_cfg_entry_point": ik_abs_env_cfg.NeedleLiftEnvCfg,
-        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.LiftNeedlePPORunnerCfg,
-        "robomimic_bc_cfg_entry_point": os.path.join(agents.__path__[0], "robomimic/bc_rnn_low_dim.json"),
-    },
-    disable_env_checker=True,
-)
-
-gym.register(
-    id="Isaac-Lift-Needle-MOPS-IK-Abs-Play-v0",
-    entry_point="isaaclab.envs:ManagerBasedRLEnv",
-    kwargs={
-        "env_cfg_entry_point": ik_abs_env_cfg.NeedleLiftEnvCfg_PLAY,
-        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.LiftNeedlePPORunnerCfg,
+        "rsl_rl_cfg_entry_point": agents.rsl_rl_rnn_cfg.LiftNeedlePPORunnerCfg,
     },
     disable_env_checker=True,
 )
@@ -73,27 +50,7 @@ gym.register(
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
     kwargs={
         "env_cfg_entry_point": ik_rel_env_cfg.NeedleLiftEnvCfg,
-        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.LiftNeedlePPORunnerCfg,
-        "robomimic_bc_cfg_entry_point": os.path.join(agents.__path__[0], "robomimic/bc_rnn_low_dim.json"),
-    },
-    disable_env_checker=True,
-)
-
-gym.register(
-    id="Isaac-Lift-Needle-MOPS-IK-Rel-Play-v0",
-    entry_point="isaaclab.envs:ManagerBasedRLEnv",
-    kwargs={
-        "env_cfg_entry_point": ik_rel_env_cfg.NeedleLiftEnvCfg_PLAY,
-        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.LiftNeedlePPORunnerCfg,
-    },
-    disable_env_checker=True,
-)
-
-gym.register(
-    id="Isaac-Lift-Needle-MOPS-Mimic-v0",
-    entry_point="orbit.surgical.tasks.surgical.lift_needle.config.mops.ik_rel_mimic_env:NeedleLiftMimicEnv",
-    kwargs={
-        "env_cfg_entry_point": ik_rel_mimic_env_cfg.NeedleLiftMimicEnvCfg,
+        "rsl_rl_cfg_entry_point": agents.rsl_rl_rnn_cfg.LiftNeedlePPORunnerCfg,
     },
     disable_env_checker=True,
 )

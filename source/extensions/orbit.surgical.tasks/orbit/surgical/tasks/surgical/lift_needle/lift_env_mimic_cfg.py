@@ -73,9 +73,9 @@ class CommandsCfg:
         asset_name="robot",
         body_name=MISSING,  # will be set by agent env cfg
         resampling_time_range=(5.0, 5.0),
-        debug_vis=False,
+        debug_vis=True,
         ranges=mdp.UniformPoseCommandCfg.Ranges(
-            pos_x=(0.60, 0.60),
+            pos_x=(0.65, 0.65),
             pos_y=(0.0, 0.0),
             pos_z=(0.3, 0.3),
             roll=(DEFAULT_ROT_TCP[0], DEFAULT_ROT_TCP[0]),
@@ -84,7 +84,7 @@ class CommandsCfg:
         ),
     )
 
-    object_pose.current_pose_visualizer_cfg.markers["frame"].scale = (0.01, 0.01, 0.01)
+    #object_pose.current_pose_visualizer_cfg.markers["frame"].scale = (0.01, 0.01, 0.01)
 
 @configclass
 class ActionsCfg:
@@ -111,7 +111,7 @@ class ObservationsCfg:
 
         eef_pos = ObsTerm(func=mdp.ee_frame_pos)
         eef_quat = ObsTerm(func=mdp.ee_frame_quat)
-        gripper_pos = ObsTerm(func=mdp.gripper_pos)
+        gripper_pos = ObsTerm(func=mdp.gripper_pos, params={"finger1_name": "tool_yaw1", "finger2_name": "tool_yaw2", "robot_cfg": SceneEntityCfg("robot")})
 
         def __post_init__(self):
             self.enable_corruption = False
@@ -137,7 +137,11 @@ class ObservationsCfg:
             },
         )
 
-        goal_reached = ObsTerm(func=mdp.object_reached_goal)
+        goal_reached = ObsTerm(func=mdp.object_reached_goal,
+                               params={
+                                   "threshold": 0.025,
+                               },
+                               )
 
         def __post_init__(self):
             self.enable_corruption = False
@@ -158,40 +162,10 @@ class EventCfg:
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
-            "pose_range": {"x": (0.6, 0.66), "y": (-0.2, -0.26), "z": (0.0, 0.0)},
+            "pose_range": {"x": (0.65, 0.75), "y": (-0.03, 0.03), "z": (0.015, 0.015)},
             "velocity_range": {},
             "asset_cfg": SceneEntityCfg("object", body_names="Object"),
         },
-    )
-
-
-@configclass
-class RewardsCfg:
-    """Reward terms for the MDP."""
-
-    reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.1}, weight=2.0)
-
-    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.02}, weight=15.0)
-
-    object_goal_tracking = RewTerm(
-        func=mdp.object_goal_distance,
-        params={"std": 0.3, "minimal_height": 0.02, "command_name": "object_pose"},
-        weight=16.0,
-    )
-
-    object_goal_tracking_fine_grained = RewTerm(
-        func=mdp.object_goal_distance,
-        params={"std": 0.05, "minimal_height": 0.02, "command_name": "object_pose"},
-        weight=5.0,
-    )
-
-    # action penalty
-    action_rate = RewTerm(func=mdp.action_rate_l2, weight=-1e-3)
-
-    joint_vel = RewTerm(
-        func=mdp.joint_vel_l2,
-        weight=-1e-4,
-        params={"asset_cfg": SceneEntityCfg("robot")},
     )
 
 
@@ -208,21 +182,6 @@ class TerminationsCfg:
     success = DoneTerm(func=mdp.object_reached_goal)
                        
 
-@configclass
-class CurriculumCfg:
-    """Curriculum terms for the MDP."""
-
-    # Increase penalty for action rate gradually
-    action_rate = CurrTerm(
-        func=mdp.modify_reward_weight, params={"term_name": "action_rate", "weight": -1e-1, "num_steps": 10000}
-    )
-
-    # Increase penalty for joint velocities gradually
-    joint_vel = CurrTerm(
-        func=mdp.modify_reward_weight, params={"term_name": "joint_vel", "weight": -1e-1, "num_steps": 10000}
-    )
-
-
 ##
 # Environment configuration
 ##
@@ -233,24 +192,24 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the lifting environment."""
 
     # Scene settings
-    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=512, env_spacing=2.5)
+    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=512, env_spacing=2.5, replicate_physics=False)
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()
     commands: CommandsCfg = CommandsCfg()
     # MDP settings
-    rewards: RewardsCfg = RewardsCfg()
     terminations: TerminationsCfg = TerminationsCfg()
     events: EventCfg = EventCfg()
-    curriculum: CurriculumCfg = CurriculumCfg()
+    rewards = None
+    curriculum = None
 
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 4
+        self.decimation = 5
         self.sim.render_interval = self.decimation
-        self.episode_length_s = 5.0
+        self.episode_length_s = 20.0
         # simulation settings
-        self.sim.dt = 1.0 / 200.0
-        self.viewer.eye = (4, -0.6, 0.3)
-        self.viewer.lookat = (0.0, 0.0, 0.04)
+        self.sim.dt = 0.01 # 100Hz
+        self.viewer.eye = (1.4, 0.0, 0.3)
+        self.viewer.lookat = (0.1, 0.0, 0.04)

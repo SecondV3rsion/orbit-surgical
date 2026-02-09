@@ -408,6 +408,11 @@
     <child link="tool_base"/>
   </joint>
   <link name="tool_rotation">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.01"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
     <visual>
       <origin rpy="0 0 1.5707963267948966" xyz="0 0 -0.01"/>
       <geometry>
@@ -423,6 +428,11 @@
     </collision>
   </link>
   <link name="tool_shaft">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.02"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
     <visual>
       <geometry>
         <cylinder length="0.5365" radius="0.004"/>
@@ -436,6 +446,11 @@
     </collision>
   </link>
   <link name="tool_wrist">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.01"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
     <visual>
       <origin rpy="0 0 1.5707963267948966" xyz="0 0 0"/>
       <geometry>
@@ -453,6 +468,11 @@
   <link name="tool_jaw_hinge"/>
   <link name="tool_jaw0"/>
   <link name="tool_jaw1">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.002"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
     <visual>
       <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
       <geometry>
@@ -468,6 +488,11 @@
     </collision>
   </link>
   <link name="tool_jaw2">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.002"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>    
     <visual>
       <origin rpy="0 1.5707963267948966 0" xyz="0 0 0"/>
       <geometry>
@@ -549,6 +574,11 @@
     <origin rpy="0 0 0" xyz="0.009 0 0"/>
   </joint>
   <link name="tool_housing">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="3.5"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
     <visual>
       <geometry>
         <box size="0.06 0.045 0.08"/>

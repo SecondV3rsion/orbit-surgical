@@ -12,7 +12,7 @@ from . import joint_pos_env_cfg
 ##
 # Pre-defined configs
 ##
-from orbit.surgical.assets.mops import MOPS_HIGH_PD_CFG  # isort: skip
+from orbit.surgical.assets.mops import MOPS_CFG  # isort: skip
 
 
 @configclass
@@ -23,11 +23,11 @@ class NeedleLiftEnvCfg(joint_pos_env_cfg.NeedleLiftEnvCfg):
 
         # Set MOPS as robot
         # We switch here to a stiffer PD controller for IK tracking to be better.
-        self.scene.robot = MOPS_HIGH_PD_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
-        self.scene.robot.init_state = MOPS_HIGH_PD_CFG.InitialStateCfg(
+        self.scene.robot = MOPS_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        self.scene.robot.init_state = MOPS_CFG.InitialStateCfg(
             pos=(0.0, 0.0, -0.2),  # initial position of the robot base
-            rot=MOPS_HIGH_PD_CFG.init_state.rot,  # initial orientation of the robot bas
-            joint_pos=MOPS_HIGH_PD_CFG.init_state.joint_pos,  # initial joint positions
+            rot=MOPS_CFG.init_state.rot,  # initial orientation of the robot bas
+            joint_pos=MOPS_CFG.init_state.joint_pos,  # initial joint positions
         )
         # Set actions for the specific robot type (MOPS)
         self.actions.body_joint_pos = DifferentialInverseKinematicsActionCfg(
@@ -42,21 +42,8 @@ class NeedleLiftEnvCfg(joint_pos_env_cfg.NeedleLiftEnvCfg):
                 "kuka_A7",
                 "tool_roll",
                 "tool_pitch",
-                "tool_yaw0",
             ],
             body_name="tool_tcp0",
             controller=DifferentialIKControllerCfg(command_type="pose", use_relative_mode=True, ik_method="dls"),
-            scale=0.5,
+            scale=0.1, # 0.1 was used for RL
         )
-
-
-@configclass
-class NeedleLiftEnvCfg_PLAY(NeedleLiftEnvCfg):
-    def __post_init__(self):
-        # post init of parent
-        super().__post_init__()
-        # make a smaller scene for play
-        self.scene.num_envs = 50
-        self.scene.env_spacing = 2.5
-        # disable randomization for play
-        self.observations.policy.enable_corruption = False
