@@ -82,25 +82,25 @@ def object_grasped(
         joint_pos[:, finger2_idx] < gripper_threshold,
     )
 
-    grasped = torch.logical_and(
-        pose_diff < diff_threshold,
-        grasped,
-    )
-
-    # in_ee = between_fingers(
-    #     env,
-    #     ee_frame_cfg=ee_frame_cfg,
-    #     finger1_frame_cfg=SceneEntityCfg("finger_1_frame"),
-    #     finger2_frame_cfg=SceneEntityCfg("finger_2_frame"),
-    #     object_cfg=object_cfg,
-    #     std=diff_threshold,
-    #     z_offset=0.002,
-    #     x_offset=0.02,
+    # grasped = torch.logical_and(
+    #     pose_diff < diff_threshold,
+    #     grasped,
     # )
+
+    in_ee = between_fingers(
+        env,
+        ee_frame_cfg=ee_frame_cfg,
+        finger1_frame_cfg=SceneEntityCfg("finger_1_frame"),
+        finger2_frame_cfg=SceneEntityCfg("finger_2_frame"),
+        object_cfg=object_cfg,
+        std=diff_threshold,
+        z_offset=0.002,
+        x_offset=0.02,
+    )
 
     #grasped = grasped * in_ee
 
-    #grasped = torch.logical_and(in_ee, grasped)
+    grasped = torch.logical_and(in_ee, grasped)
 
     return grasped
 

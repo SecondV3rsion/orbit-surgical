@@ -37,6 +37,8 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
     robot: ArticulationCfg = MISSING
     # end-effector sensor: will be populated by agent env cfg
     ee_frame: FrameTransformerCfg = MISSING
+    finger_1_frame: FrameTransformerCfg = MISSING
+    finger_2_frame: FrameTransformerCfg = MISSING
     # target object: will be populated by agent env cfg
     object: RigidObjectCfg = MISSING
 
@@ -73,7 +75,7 @@ class CommandsCfg:
         asset_name="robot",
         body_name=MISSING,  # will be set by agent env cfg
         resampling_time_range=(5.0, 5.0),
-        debug_vis=True,
+        debug_vis=False,
         ranges=mdp.UniformPoseCommandCfg.Ranges(
             pos_x=(0.65, 0.65),
             pos_y=(0.0, 0.0),
@@ -84,7 +86,7 @@ class CommandsCfg:
         ),
     )
 
-    #object_pose.current_pose_visualizer_cfg.markers["frame"].scale = (0.01, 0.01, 0.01)
+    object_pose.current_pose_visualizer_cfg.markers["frame"].scale = (0.02, 0.02, 0.02)
 
 @configclass
 class ActionsCfg:
