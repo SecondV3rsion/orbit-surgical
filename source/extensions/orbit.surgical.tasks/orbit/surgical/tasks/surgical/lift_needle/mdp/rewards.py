@@ -59,7 +59,7 @@ def object_grasped(
     object_cfg: SceneEntityCfg,
     diff_threshold: float = 0.01,
     gripper_open_val: torch.tensor = torch.tensor([0.6]),
-    gripper_threshold: float = 0.1,
+    gripper_threshold: float = 0.5,
     finger1_name: str = "tool_yaw1",
     finger2_name: str = "tool_yaw2",
 ) -> torch.Tensor:
@@ -78,74 +78,24 @@ def object_grasped(
     joint_pos = robot.data.joint_pos
 
     grasped = torch.logical_and(
-        joint_pos[:, finger1_idx] < gripper_threshold,
-        joint_pos[:, finger2_idx] < gripper_threshold,
+        torch.abs(joint_pos[:, finger1_idx] - gripper_open_val.to(env.device)) > gripper_threshold,
+        torch.abs(joint_pos[:, finger2_idx] - gripper_open_val.to(env.device)) > gripper_threshold,
     )
 
-    grasped = torch.logical_and(
-        pose_diff < diff_threshold,
-        grasped,
+    in_ee = between_fingers(
+        env,
+        ee_frame_cfg=ee_frame_cfg,
+        finger1_frame_cfg=SceneEntityCfg("finger_1_frame"),
+        finger2_frame_cfg=SceneEntityCfg("finger_2_frame"),
+        object_cfg=object_cfg,
+        std=diff_threshold,
+        z_offset=0.002,
+        x_offset=0.02,
     )
 
-    # in_ee = between_fingers(
-    #     env,
-    #     ee_frame_cfg=ee_frame_cfg,
-    #     finger1_frame_cfg=SceneEntityCfg("finger_1_frame"),
-    #     finger2_frame_cfg=SceneEntityCfg("finger_2_frame"),
-    #     object_cfg=object_cfg,
-    #     std=diff_threshold,
-    #     z_offset=0.002,
-    #     x_offset=0.02,
-    # )
-
-    #grasped = grasped * in_ee
-
-    #grasped = torch.logical_and(in_ee, grasped)
+    grasped = torch.logical_and(in_ee, grasped)
 
     return grasped
-
-def gripper_state_by_distance(
-    env: ManagerBasedRLEnv,
-    robot_cfg: SceneEntityCfg,
-    object_cfg: SceneEntityCfg = SceneEntityCfg("object"),
-    ee_frame_cfg: SceneEntityCfg = SceneEntityCfg("ee_frame"),
-    std_far: float = 0.02,     # ~2 cm
-    std_near: float = 0.008,   # ~8 mm
-    gripper_threshold: float = 0.1,
-    finger1_name: str = "tool_yaw1",
-    finger2_name: str = "tool_yaw2",
-) -> torch.Tensor:
-
-    # --- scene ---
-    object: RigidObject = env.scene[object_cfg.name]
-    ee_frame: FrameTransformer = env.scene[ee_frame_cfg.name]
-    robot: Articulation = env.scene[robot_cfg.name]
-
-    # --- distance ---
-    obj_pos = object.data.root_pos_w
-    ee_pos = ee_frame.data.target_pos_w[..., 0, :]
-    d = torch.norm(obj_pos - ee_pos, dim=1)
-
-    # --- gripper state ---
-    f1 = robot.joint_names.index(finger1_name)
-    f2 = robot.joint_names.index(finger2_name)
-    joint_pos = robot.data.joint_pos
-
-    gripper_open = (
-        (joint_pos[:, f1] > gripper_threshold) +
-        (joint_pos[:, f2] > gripper_threshold)
-    ) / 2.0
-
-    #gripper_closed = 1.0 - gripper_open
-
-    # --- FAR: reward open ---
-    far_term = gripper_open * torch.tanh(d / std_far)
-
-    # --- NEAR: reward closed ---
-    #near_term = gripper_closed * (1 - torch.tanh(d / std_near))
-
-    return far_term # + near_term
-
 
 def object_is_lifted(
     env: ManagerBasedRLEnv, minimal_height: float, object_cfg: SceneEntityCfg = SceneEntityCfg("object")
@@ -214,93 +164,6 @@ def object_open_ee_distance(
     )
 
     return torch.where(open_grasper, 1 - torch.tanh(object_ee_distance / std), 0.0)
-
-def object_open_z_distance(
-    env: ManagerBasedRLEnv,
-    std: float,
-    z_offset: float = 0.02,
-    gripper_threshold: float = 0.2,
-    object_cfg: SceneEntityCfg = SceneEntityCfg("object"),
-    ee_frame_cfg: SceneEntityCfg = SceneEntityCfg("ee_frame"),
-    robot_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
-    finger1_name: str = "tool_yaw1",
-    finger2_name: str = "tool_yaw2",
-) -> torch.Tensor:
-    """
-    Reward XY reaching:
-    - above object + z_offset → only if gripper is open
-    - below object + z_offset → regardless of gripper state
-    """
-
-    object: RigidObject = env.scene[object_cfg.name]
-    ee_frame: FrameTransformer = env.scene[ee_frame_cfg.name]
-    robot: Articulation = env.scene[robot_cfg.name]
-
-    # Target object position: (num_envs, 3)
-    cube_pos_w = object.data.root_pos_w
-    # End-effector position: (num_envs, 3)
-    ee_w = ee_frame.data.target_pos_w[..., 0, :]
-    # Distance of the end-effector to the object: (num_envs,)
-    object_ee_distance = torch.norm(cube_pos_w - ee_w, dim=1)
-
-    reach_reward = 1.0 - torch.tanh(object_ee_distance / std)
-
-    # Height condition
-    above_obj = ee_w[:, 2] > (cube_pos_w[:, 2] + z_offset)
-
-    # Gripper state
-    finger1_idx = robot.joint_names.index(finger1_name)
-    finger2_idx = robot.joint_names.index(finger2_name)
-    joint_pos = robot.data.joint_pos
-
-    gripper_open = torch.logical_and(
-        joint_pos[:, finger1_idx] > gripper_threshold,
-        joint_pos[:, finger2_idx] > gripper_threshold,
-    )
-
-    # Mask logic
-    valid = torch.logical_or(
-        ~above_obj,          # below z threshold → always valid
-        gripper_open         # above → only if open
-    )
-
-    return torch.where(valid, reach_reward, torch.zeros_like(reach_reward))
-
-def object_ee_xy_distance(
-    env: ManagerBasedRLEnv,
-    std: float,
-    object_cfg: SceneEntityCfg = SceneEntityCfg("object"),
-    ee_frame_cfg: SceneEntityCfg = SceneEntityCfg("ee_frame"),
-    ) -> torch.Tensor:
-    """Reward the agent for reaching the object using tanh-kernel."""
-    # extract the used quantities (to enable type-hinting)
-    object: RigidObject = env.scene[object_cfg.name]
-    ee_frame: FrameTransformer = env.scene[ee_frame_cfg.name]
-
-    cube_pos_w = object.data.root_pos_w[..., :2]  # (num_envs, 2)
-    ee_w = ee_frame.data.target_pos_w[..., 0, :2]
-    # Distance of the end-effector to the object: (num_envs,)
-    object_ee_xy_distance = torch.norm(cube_pos_w - ee_w, dim=1)
-
-    return 1 - torch.tanh(object_ee_xy_distance / std)
-
-def ee_height_above_object(
-        env: ManagerBasedRLEnv,
-        target_height: float=0.0025,
-        std: float=0.002,
-        object_cfg: SceneEntityCfg = SceneEntityCfg("object"),
-        ee_frame_cfg: SceneEntityCfg = SceneEntityCfg("ee_frame"),
-    ) -> torch.Tensor:
-
-    object: RigidObject = env.scene[object_cfg.name]
-    ee_frame: FrameTransformer = env.scene[ee_frame_cfg.name]
-
-    object_z = object.data.root_pos_w[:, 2]
-    ee_z = ee_frame.data.target_pos_w[..., 0, 2]
-    dz = ee_z - object_z - target_height
-    return 1 - torch.tanh(torch.abs(dz) / std)
-
-
 
 def orientation_command_error(env: ManagerBasedRLEnv, command_name: str, asset_cfg: SceneEntityCfg) -> torch.Tensor:
     """Penalize tracking orientation error using shortest path.
