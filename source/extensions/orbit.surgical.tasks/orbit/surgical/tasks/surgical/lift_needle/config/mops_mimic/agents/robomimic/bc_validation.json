@@ -1,8 +1,8 @@
 {
     "algo_name": "bc",
     "experiment": {
-        "name": "bc_mlp_rnn",
-        "validate": false,
+        "name": "bc_validation",
+        "validate": true,
         "logging": {
             "terminal_output_to_txt": true,
             "log_tb": true
@@ -17,6 +17,7 @@
             "on_best_rollout_success_rate": true
         },
         "epoch_every_n_steps": 100,
+        "validation_epoch_every_n_steps": 10,
         "env": null,
         "additional_envs": null,
         "render": false,
@@ -63,16 +64,16 @@
             "l1_weight": 0.0,
             "cos_weight": 0.0
         },
-        "actor_layer_dims": [256,128,64],
-        "gmm": {
+        "actor_layer_dims": [512, 512],
+        "gaussian": {
             "enabled": true,
-            "num_modes": 5,
-            "min_std": 0.0001,
-            "std_activation": "softplus",
-            "low_noise_eval": true
+            "fixed_std": false,
+            "init_std": 0.1,
+            "min_std": 0.01,
+            "std_activation": "softplus"
         },
         "rnn": {
-            "enabled": true,
+            "enabled": false,
             "horizon": 10,
             "hidden_dim": 400,
             "rnn_type": "LSTM",
