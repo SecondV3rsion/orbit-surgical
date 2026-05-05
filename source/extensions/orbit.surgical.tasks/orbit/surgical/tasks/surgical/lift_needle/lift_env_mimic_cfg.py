@@ -210,7 +210,7 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
         # general settings
         self.decimation = 5
         self.sim.render_interval = self.decimation
-        self.episode_length_s = 20.0
+        self.episode_length_s = 15.0
         # simulation settings
         self.sim.dt = 0.01 # 100Hz
         self.viewer.eye = (1.4, 0.0, 0.3)
