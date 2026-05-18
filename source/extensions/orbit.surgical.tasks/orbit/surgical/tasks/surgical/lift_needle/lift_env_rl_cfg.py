@@ -158,15 +158,6 @@ class RewardsCfg:
 
     #GRASP---------------------------
     
-    # grasp_near_object = RewTerm(
-    #     func=mdp.object_grasping, 
-    #     params={"robot_cfg": SceneEntityCfg("robot"), "ee_frame_cfg": SceneEntityCfg("ee_frame"), 
-    #             "object_cfg": SceneEntityCfg("object"), "gripper_open_val": torch.tensor([0.6]),
-    #             "diff_threshold": 0.02,
-    #             "gripper_threshold": 0.4
-    #             }, 
-    #     weight=0.2)
-    
     object_grasped = RewTerm(
         func=mdp.object_grasped, 
         params={"robot_cfg": SceneEntityCfg("robot"),
@@ -210,11 +201,11 @@ class CurriculumCfg:
     # Increase penalty for action rate gradually
 
     # action_rate = CurrTerm(
-    #     func=mdp.modify_reward_weight, params={"term_name": "action_rate", "weight": -1e-1, "num_steps": 20000}
+    #     func=mdp.modify_reward_weight, params={"term_name": "action_rate", "weight": -1e-1, "num_steps": 60000}
     # )
 
     # joint_vel = CurrTerm(
-    #     func=mdp.modify_reward_weight, params={"term_name": "joint_vel", "weight": -1e-1, "num_steps": 20000}
+    #     func=mdp.modify_reward_weight, params={"term_name": "joint_vel", "weight": -1e-1, "num_steps": 60000}
     # )    
 
 @configclass
