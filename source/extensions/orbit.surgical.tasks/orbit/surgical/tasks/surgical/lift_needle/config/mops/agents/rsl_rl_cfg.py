@@ -19,7 +19,7 @@ class LiftNeedlePPORunnerCfg(RslRlOnPolicyRunnerCfg):
     experiment_name = "mops_needle_lift"
     empirical_normalization = False
     policy = RslRlPpoActorCriticCfg(
-        init_noise_std=0.5,
+        init_noise_std=0.2,
         actor_hidden_dims=[256, 128, 64],
         critic_hidden_dims=[256, 128, 64],
         activation="elu",
@@ -28,7 +28,7 @@ class LiftNeedlePPORunnerCfg(RslRlOnPolicyRunnerCfg):
         value_loss_coef=1.0,
         use_clipped_value_loss=True,
         clip_param=0.1,
-        entropy_coef=0.003,
+        entropy_coef=0.001,
         num_learning_epochs=5,
         num_mini_batches=4,
         learning_rate=3.0e-5,
