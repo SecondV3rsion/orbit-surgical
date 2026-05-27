@@ -157,6 +157,16 @@ class RewardsCfg:
     #-----------------------------------
 
     #GRASP---------------------------
+
+    grasping_object = RewTerm(
+    func=mdp.object_grasping, 
+    params={"robot_cfg": SceneEntityCfg("robot"),
+            "ee_frame_cfg": SceneEntityCfg("ee_frame"), 
+            "object_cfg": SceneEntityCfg("object"),
+            "diff_threshold": 0.03,
+            "gripper_threshold": 0.1
+            },  
+    weight=0.4)
     
     object_grasped = RewTerm(
         func=mdp.object_grasped, 
@@ -172,17 +182,17 @@ class RewardsCfg:
 
     # LIFT ---------------------------
 
-    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.02}, weight=4.0)
+    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.01}, weight=5.0)
     
     object_goal_tracking = RewTerm(
         func=mdp.object_goal_distance,
-        params={"std": 0.2, "minimal_height": 0.02, "command_name": "object_pose"},
-        weight=5.0,
+        params={"std": 0.2, "minimal_height": 0.01, "command_name": "object_pose"},
+        weight=16.0,
     )
 
     object_goal_tracking_fine_grained = RewTerm(
         func=mdp.object_goal_distance,
-        params={"std": 0.05, "minimal_height": 0.02, "command_name": "object_pose"},
+        params={"std": 0.05, "minimal_height": 0.01, "command_name": "object_pose"},
         weight=5.0,
     )
 
@@ -249,7 +259,7 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
         # general settings
         self.decimation = 4
         self.sim.render_interval = self.decimation
-        self.episode_length_s = 3.0
+        self.episode_length_s = 5.0
         # simulation settings
         self.sim.dt = 1.0 / 200.0
         self.viewer.eye = (1.4, 0.0, 0.3)
