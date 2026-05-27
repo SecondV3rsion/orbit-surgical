@@ -208,10 +208,10 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 5
+        self.decimation = 4
         self.sim.render_interval = self.decimation
         self.episode_length_s = 15.0
         # simulation settings
-        self.sim.dt = 0.01 # 100Hz
+        self.sim.dt = 1/200
         self.viewer.eye = (1.4, 0.0, 0.3)
         self.viewer.lookat = (0.1, 0.0, 0.04)

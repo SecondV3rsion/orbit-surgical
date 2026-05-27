@@ -7,13 +7,33 @@
 import gymnasium as gym
 import os
 
-from . import agents, ik_rel_env_cfg
+from . import agents, ik_rel_env_cfg, ik_abs_env_cfg, joint_pos_env_cfg
 from . import ik_rel_mimic_env_cfg
 
 ##
 # Register Gym environments.
 ##
 
+gym.register(
+    id="Isaac-Lift-Needle-MOPS-BC-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    kwargs={
+        "env_cfg_entry_point": joint_pos_env_cfg.NeedleLiftEnvCfg,
+        "robomimic_bc_cfg_entry_point": os.path.join(agents.__path__[0], "robomimic/bc_validation.json"),
+    },
+    disable_env_checker=True,
+)
+
+
+gym.register(
+    id="Isaac-Lift-Needle-MOPS-BC-IK-Abs-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    kwargs={
+        "env_cfg_entry_point": ik_abs_env_cfg.NeedleLiftEnvCfg,
+        "robomimic_bc_cfg_entry_point": os.path.join(agents.__path__[0], "robomimic/bc_validation.json"),
+    },
+    disable_env_checker=True,
+)
 
 ##
 # Inverse Kinematics - Relative Pose Control
