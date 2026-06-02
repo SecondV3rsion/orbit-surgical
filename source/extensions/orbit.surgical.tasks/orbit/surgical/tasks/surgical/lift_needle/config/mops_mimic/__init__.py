@@ -8,33 +8,12 @@ import gymnasium as gym
 import os
 
 from . import agents, ik_rel_env_cfg, ik_abs_env_cfg, joint_pos_env_cfg
-from . import ik_rel_mimic_env_cfg, ik_abs_mimic_env_cfg, joint_pos_mimic_env_cfg
+from . import ik_rel_mimic_env_cfg, ik_abs_mimic_env_cfg
 
 ##
 # Register Gym environments.
 ##
 
-##
-# Joint Position Control
-##
-gym.register(
-    id="Isaac-Lift-Needle-MOPS-BC-v0",
-    entry_point="isaaclab.envs:ManagerBasedRLEnv",
-    kwargs={
-        "env_cfg_entry_point": joint_pos_env_cfg.NeedleLiftEnvCfg,
-        "robomimic_bc_cfg_entry_point": os.path.join(agents.__path__[0], "robomimic/bc_validation.json"),
-    },
-    disable_env_checker=True,
-)
-
-gym.register(
-    id="Isaac-Lift-Needle-MOPS-Mimic-Joint-Pos-v0",
-    entry_point="orbit.surgical.tasks.surgical.lift_needle.config.mops_mimic.joint_pos_mimic_env:NeedleLiftMimicEnv",
-    kwargs={
-        "env_cfg_entry_point": joint_pos_mimic_env_cfg.NeedleLiftMimicEnvCfg,
-    },
-    disable_env_checker=True,
-)
 
 ##
 # Inverse Kinematics - Absolute Pose Control
@@ -45,7 +24,7 @@ gym.register(
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
     kwargs={
         "env_cfg_entry_point": ik_abs_env_cfg.NeedleLiftEnvCfg,
-        "robomimic_bc_cfg_entry_point": os.path.join(agents.__path__[0], "robomimic/bc_validation.json"),
+        "robomimic_bc_cfg_entry_point": os.path.join(agents.__path__[0], "robomimic/bc_rnn_low_dim.json"),
     },
     disable_env_checker=True,
 )

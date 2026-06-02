@@ -9,14 +9,13 @@ class NeedleLiftMimicEnvCfg(ik_abs_env_cfg.NeedleLiftEnvCfg, MimicEnvCfg):
         super().__post_init__()
 
         # Override datagen config
-        self.datagen_config.name = "needle_lift"
+        self.datagen_config.name = "lift_needle"
         self.datagen_config.generation_guarantee = True
-        self.datagen_config.generation_keep_failed = True
+        self.datagen_config.generation_keep_failed = False
         self.datagen_config.generation_num_trials = 10
         self.datagen_config.generation_select_src_per_subtask = True
         self.datagen_config.generation_transform_first_robot_pose = False
         self.datagen_config.generation_interpolate_from_last_target_pose = True
-        self.datagen_config.generation_relative = True
         self.datagen_config.max_num_failures = 25
         self.datagen_config.seed = 1
 
@@ -30,7 +29,7 @@ class NeedleLiftMimicEnvCfg(ik_abs_env_cfg.NeedleLiftEnvCfg, MimicEnvCfg):
                 subtask_term_offset_range=(5, 10),
                 selection_strategy="nearest_neighbor_object",
                 selection_strategy_kwargs={"nn_k": 3},
-                action_noise=0.02,
+                action_noise=0.005,
                 num_interpolation_steps=5,
                 num_fixed_steps=0,
                 apply_noise_during_interpolation=False,
@@ -46,7 +45,7 @@ class NeedleLiftMimicEnvCfg(ik_abs_env_cfg.NeedleLiftEnvCfg, MimicEnvCfg):
                 subtask_term_offset_range=(5, 10),
                 selection_strategy="nearest_neighbor_object",
                 selection_strategy_kwargs={"nn_k": 3},
-                action_noise=0.02,
+                action_noise=0.01,
                 num_interpolation_steps=5,
                 num_fixed_steps=0,
                 apply_noise_during_interpolation=False,
@@ -62,7 +61,7 @@ class NeedleLiftMimicEnvCfg(ik_abs_env_cfg.NeedleLiftEnvCfg, MimicEnvCfg):
                 subtask_term_offset_range=(0, 0),
                 selection_strategy="nearest_neighbor_object",
                 selection_strategy_kwargs={"nn_k": 3},
-                action_noise=0.02,
+                action_noise=0.01,
                 num_interpolation_steps=5,
                 num_fixed_steps=0,
                 apply_noise_during_interpolation=False,
@@ -71,5 +70,5 @@ class NeedleLiftMimicEnvCfg(ik_abs_env_cfg.NeedleLiftEnvCfg, MimicEnvCfg):
         )
 
         # Assign to the config
-        self.subtask_configs["needle_lift"] = subtask_configs
+        self.subtask_configs["mops"] = subtask_configs
 

@@ -76,7 +76,7 @@ class NeedleLiftMimicEnv(ManagerBasedRLMimicEnv):
         # add noise to action
         pose_action = torch.cat([delta_position, delta_rotation], dim=0)
         if action_noise_dict is not None:
-            noise = action_noise_dict["needle_lift"] * torch.randn_like(pose_action)
+            noise = action_noise_dict["mops"] * torch.randn_like(pose_action)
             pose_action += noise
             pose_action = torch.clamp(pose_action, -1.0, 1.0)
 
@@ -149,7 +149,7 @@ class NeedleLiftMimicEnv(ManagerBasedRLMimicEnv):
             env_ids = slice(None)
 
         signals = dict()
-        subtask_terms = self.obs_buf["subtask"]
+        subtask_terms = self.obs_buf["subtask_terms"]
 
         signals["grasp"] = subtask_terms["grasp"][env_ids]
         signals["object_lifted"] = subtask_terms["object_lifted"][env_ids]

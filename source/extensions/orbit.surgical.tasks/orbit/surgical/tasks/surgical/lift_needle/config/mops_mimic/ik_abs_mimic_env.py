@@ -26,54 +26,36 @@ class NeedleLiftMimicEnv(ManagerBasedRLMimicEnv):
             env_ids = slice(None)
 
         # Retrieve end effector pose from the observation buffer
-        eef_pos = self.obs_buf["policy"]["eef_pos"][env_ids]
+        robot_base_pos = self.scene["robot"].data.root_pos_w[env_ids]  # (N, 3)
+        eef_pos = self.obs_buf["policy"]["eef_pos"][env_ids] - robot_base_pos
         eef_quat = self.obs_buf["policy"]["eef_quat"][env_ids]
         # Quaternion format is w,x,y,z
         return PoseUtils.make_pose(eef_pos, PoseUtils.matrix_from_quat(eef_quat))
     
     def target_eef_pose_to_action(
-        self, target_eef_pose_dict: dict,
+        self,
+        target_eef_pose_dict: dict,
         gripper_action_dict: dict,
         action_noise_dict: dict | None = None,
-        env_id: int = 0
+        env_id: int = 0,
     ) -> torch.Tensor:
-        """Convert target pose to action.
-
-        This method transforms a dictionary of target end-effector poses and gripper actions
-        into a single action tensor that can be used by the environment.
-
-        The function:
-        1. Extracts target position and rotation from the pose dictionary
-        2. Extracts gripper action for the end effector
-        3. Concatenates position and quaternion rotation into a pose action
-        4. Optionally adds noise to the pose action for exploration
-        5. Combines pose action with gripper action into a final action tensor
-
-        Args:
-            target_eef_pose_dict: Dictionary containing target end-effector pose(s),
-                with keys as eef names and values as pose tensors.
-            gripper_action_dict: Dictionary containing gripper action(s),
-                with keys as eef names and values as action tensors.
-            noise: Optional noise magnitude to apply to the pose action for exploration.
-                If provided, random noise is generated and added to the pose action.
-            env_id: Environment ID for multi-environment setups, defaults to 0.
-
-        Returns:
-            torch.Tensor: A single action tensor combining pose and gripper commands.
+        """
+        Converts absolute target EEF pose into absolute action format.
+        Mimics IsaacLab relative action implementation structure.
         """
         # target position and rotation
         (target_eef_pose,) = target_eef_pose_dict.values()
         target_pos, target_rot = PoseUtils.unmake_pose(target_eef_pose)
 
-        # get gripper action for single eef
+        # get gripper action
         (gripper_action,) = gripper_action_dict.values()
 
         # add noise to action
         pose_action = torch.cat([target_pos, PoseUtils.quat_from_matrix(target_rot)], dim=0)
-        if noise is not None:
-            noise = noise * torch.randn_like(pose_action)
+        if action_noise_dict is not None:
+            noise = action_noise_dict["mops"] * torch.randn_like(pose_action)
             pose_action += noise
-
+        
         return torch.cat([pose_action, gripper_action], dim=0).unsqueeze(0)
     
     def action_to_target_eef_pose(self, action: torch.Tensor) -> dict[str, torch.Tensor]:
@@ -115,7 +97,7 @@ class NeedleLiftMimicEnv(ManagerBasedRLMimicEnv):
             env_ids = slice(None)
 
         signals = dict()
-        subtask_terms = self.obs_buf["subtask"]
+        subtask_terms = self.obs_buf["subtask_terms"]
 
         signals["grasp"] = subtask_terms["grasp"][env_ids]
         signals["object_lifted"] = subtask_terms["object_lifted"][env_ids]
