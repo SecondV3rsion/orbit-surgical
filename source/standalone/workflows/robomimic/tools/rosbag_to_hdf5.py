@@ -28,6 +28,7 @@ import os
 import sys
 from pathlib import Path
 import json
+import matplotlib.pyplot as plt
 
 import sqlite3
 from rclpy.serialization import deserialize_message
@@ -52,7 +53,8 @@ except ImportError:
 # ---------------------------------------------------------------------------
 
 # ── Isaac Lab sim parameters (must match your env cfg) ─────────────────────
-ISAAC_SCALE = 0.1   # scale= in DifferentialInverseKinematicsActionCfg
+ISAAC_SCALE = 1.0   # scale= in DifferentialInverseKinematicsActionCfg
+DECIMATION = 5
 
 # ── Gripper constants ──────────────────────────────────────────────────────────
 GRIPPER_OPEN_VALUE   = 0.6    # grasper_angle value that means "open"
@@ -66,6 +68,14 @@ TOPIC_MAP: dict[str, str] = {
     # Action commands    (mops_msgs/ToolEndEffectorState)
     "/a/servo_joint_ik": "mops_msgs/msg/ToolEndEffectorState",
 }
+
+WARMUP_STEPS = DECIMATION * 1 # trim first N steps from every demo
+END_STEPS = DECIMATION * 1   # trim last N steps from every demo
+NEEDLE_CORRECTION = np.array([0.0, -0.0, 0.0])  # add this to object position to get needle tip position
+
+robot_root_pos = np.array([0.0, 0.0, -0.21], dtype=np.float32)
+robot_root_quat = np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float32)
+robot_default_quat = np.array([0.0, 0.707, 0.0, -0.707], dtype=np.float32)
 
 # ---------------------------------------------------------------------------
 # Bag reading
@@ -227,80 +237,86 @@ def build_action_array_joint(actions: np.ndarray, joint_pos_rel: np.ndarray) -> 
 # HDF5 writer
 # ---------------------------------------------------------------------------
 
-def write_hdf5(
+def write_demo(
+    data_grp: "h5py.Group",
+    demo_idx: int,
     data: dict[str, list[tuple[float, object]]],
-    output_path: str,
     env_name: str = "mops_lift",
     obs_topic: str = "/a/mops_state",
-    robot_root_pose: np.ndarray | None = None,      # (1,7) [x,y,z, qx,qy,qz,qw] of robot base in world;
-) -> None:
+    robot_root_pose: "np.ndarray | None" = None,
+) -> int:
     """
-    Write a single-demo HDF5 file matching IsaacLab / robomimic structure exactly.
+    Write one demo into an already-open HDF5 ``data`` group.
 
-    Structure:
-        data/
-            (attr) total
-            (attr) env_args
-            demo_0/
-                actions                         (T, 7)
-                initial_state/
-                    articulation/robot/
-                        joint_position          (1, 12)
-                        joint_velocity          (1, 12)
-                        root_pose               (1, 7)
-                        root_velocity           (1, 6)
-                    rigid_object/object/
-                        root_pose               (1, 7)
-                        root_velocity           (1, 6)
-                obs/
-                    actions                     (T, 7)
-                    eef_pos                     (T, 3)
-                    eef_quat                    (T, 4)
-                    gripper_pos                 (T, 2)
-                    joint_pos                   (T, 12)
-                    joint_vel                   (T, 12)
-                    object_position             (T, 3)
-                    target_object_position      (T, 3)
-                states/
-                    articulation/robot/
-                        joint_position          (T, 12)
-                        joint_velocity          (T, 12)
-                        root_pose               (T, 7)
-                        root_velocity           (T, 6)
-                    rigid_object/object/
-                        root_pose               (T, 7)
-                        root_velocity           (T, 6)              
+    Parameters
+    ----------
+    data_grp   : h5py Group at path ``/data`` inside the open HDF5 file.
+    demo_idx   : Integer index used to name the group (``demo_0``, ``demo_1``, …).
+    data       : Message dict returned by :func:`read_bag`.
+    env_name   : Written into ``data_grp.attrs["env_args"]`` on the first demo.
+    obs_topic  : Key inside *data* that holds the observation messages.
+    robot_root_pose : (1,7) robot base pose in world frame; uses a default if None.
+
+    Returns
+    -------
+    T : int – number of valid timesteps written for this demo.
+
+    HDF5 layout written under ``data/demo_<demo_idx>/``
+    -------------------------------------------------------
+        actions                         (T, action_dim)
+        initial_state/
+            articulation/robot/
+                joint_position          (1, 12)
+                joint_velocity          (1, 12)
+                root_pose               (1, 7)
+                root_velocity           (1, 6)
+            rigid_object/object/
+                root_pose               (1, 7)
+                root_velocity           (1, 6)
+        obs/
+            actions                     (T, action_dim)
+            eef_pos                     (T, 3)
+            eef_quat                    (T, 4)
+            gripper_pos                 (T, 2)
+            joint_pos                   (T, 12)
+            joint_vel                   (T, 12)
+            object_position             (T, 3)
+            target_object_position      (T, 3)
+        states/
+            articulation/robot/
+                joint_position          (T, 12)
+                joint_velocity          (T, 12)
+                root_pose               (T, 7)
+                root_velocity           (T, 6)
+            rigid_object/object/
+                root_pose               (T, 7)
+                root_velocity           (T, 6)
     """
     observations = data[obs_topic]
-    T = len(observations)
-    if T == 0:
+    T_raw = len(observations)
+    if T_raw == 0:
         raise ValueError(f"No messages found on topic {obs_topic!r}")
 
-    output_path = Path(output_path)
-    output_path.mkdir(parents=True, exist_ok=True)
-    hdf5_file = output_path / "demo.hdf5"
-
     # ── Unpack observations ────────────────────────────────────────────────
-    ros_actions = np.zeros((T, 8), dtype=np.float32)
-    actions = np.zeros((T, 7), dtype=np.float32)
-    joint_pos_abs   = np.zeros((T, 12), dtype=np.float32)
-    joint_vel_abs   = np.zeros((T, 12), dtype=np.float32)
-    joint_pos_rel   = np.zeros((T, 12), dtype=np.float32)
-    joint_vel_rel   = np.zeros((T, 12), dtype=np.float32)
-    eef_pos     = np.zeros((T,  3), dtype=np.float32)
-    eef_quat    = np.zeros((T,  4), dtype=np.float32)
-    object_pos  = np.zeros((T,  3), dtype=np.float32)
-    gripper_pos = np.zeros((T,  2), dtype=np.float32)
+    ros_actions   = np.zeros((T_raw, 8),  dtype=np.float32)
+    joint_pos_abs = np.zeros((T_raw, 12), dtype=np.float32)
+    joint_vel_abs = np.zeros((T_raw, 12), dtype=np.float32)
+    joint_pos_rel = np.zeros((T_raw, 12), dtype=np.float32)
+    joint_vel_rel = np.zeros((T_raw, 12), dtype=np.float32)
+    eef_pos       = np.zeros((T_raw,  3), dtype=np.float32)
+    eef_quat      = np.zeros((T_raw,  4), dtype=np.float32)
+    object_pos    = np.zeros((T_raw,  3), dtype=np.float32)
+    gripper_pos   = np.zeros((T_raw,  2), dtype=np.float32)
 
     valid_indices = []
 
     for i, (ts, msg) in enumerate(observations):
         action = msg.action
-        
-        # Skip if action contains any NaN
+
+        # Skip timesteps whose action contains any NaN
         if np.any(np.isnan(action)):
             continue
-        
+
         ros_actions[i]    = action
         joint_pos_abs[i]  = msg.q_pos_abs
         joint_vel_abs[i]  = msg.q_vel_abs
@@ -310,7 +326,7 @@ def write_hdf5(
         eef_quat[i]       = msg.eef_quat
         object_pos[i]     = msg.object_pos
         gripper_pos[i]    = msg.gripper_pos
-        
+
         valid_indices.append(i)
 
     # Trim arrays to only valid rows
@@ -321,86 +337,102 @@ def write_hdf5(
     joint_vel_rel = joint_vel_rel[valid_indices]
     eef_pos       = eef_pos[valid_indices]
     eef_quat      = eef_quat[valid_indices]
-    object_pos    = object_pos[valid_indices]
+    object_pos    = object_pos[valid_indices] + NEEDLE_CORRECTION
     gripper_pos   = gripper_pos[valid_indices]
 
+    T = len(valid_indices)
+
+    eef_quat[:] = robot_default_quat
+
     # target = fixed goal = last observed object position
-    target_object_position = np.tile(object_pos[-1], (T, 1))  # (T, 3)
+    #target_object_position = np.tile(object_pos[-1], (T, 1))  # (T, 3)
+    target_object_position = np.tile([[0.7, 0.0, 0.3]], (T,1))  # (T, 3)
 
     # ── initial_state values (first timestep) ─────────────────────────────
-    # Robot base in world frame — pass in if known, otherwise identity
     if robot_root_pose is None:
-        robot_root_pose = np.array([[0.0, 0.0, -0.2, 1.0, 0.0, 0.0, 0.0]], dtype=np.float32)  # (1,7) TO DO: UPDTE DEFAULT TO MATCH YOUR ROBOT
-
-    robot_joint_pos_init = np.array([[0.0, 0.0, 0.0, -1.27, 0.0, 0.31, 0.0, 0.01, 0.01, 0.01, 0.6, 0.6]], dtype=np.float32)  # (1, 12)
+        robot_root_pose = np.hstack([robot_root_pos, robot_root_quat])  
     
-    # Object pose at t=0: xyz from obs, but with fixed neutral orientation (since we don't observe object orientation in the MOPS state)    
-    obj_root_pose_init = np.array(
-        [[object_pos[0, 0], object_pos[0, 1], object_pos[0, 2], 0.7071068, 0.0, 0.0, 0.7071068]],
+    robot_root_pose = robot_root_pose[None, :] # (1, 7)
+
+    robot_joint_pos_init = np.array(
+        [[0.0, 0.0, 0.0, -1.27, 0.0, 0.31, 0.0, 0.01, 0.01, 0.01, 0.6, 0.6]],
         dtype=np.float32,
-    )
+    )  # (1, 12)
 
-    env_args = json.dumps({
-        "env_name":   env_name,
-        "env_type":   2,
-        "env_kwargs": {},
-    })
+    # Object pose at t=0: xyz from obs, fixed neutral orientation
+    obj_root_pose_init = np.concatenate([
+        object_pos[0].astype(np.float32) + robot_root_pos, #+ [0, 0, 0.01],
+        [0.7071068, 0, 0, 0.7071068]
+    ]).astype(np.float32)
+    obj_root_pose_init = obj_root_pose_init[None, :]
 
-    # ── Write ──────────────────────────────────────────────────────────────
-    with h5py.File(hdf5_file, "w") as f:
+    object_pose = np.hstack([object_pos + robot_root_pos, np.tile([0.7071068, 0.0, 0.0, 0.7071068], (T, 1))])  # (T, 7)
 
-        data_grp = f.create_group("data")
-        data_grp.attrs["total"]    = T
-        data_grp.attrs["env_args"] = env_args
+    # ── Write env_args attribute once (on the first demo) ─────────────────
+    if "env_args" not in data_grp.attrs:
+        data_grp.attrs["env_args"] = json.dumps({
+            "env_name":   env_name,
+            "type":   2,
+            "env_kwargs": {},
+        })
 
-        demo = data_grp.create_group("demo_0")
-        demo.attrs["num_samples"] = T
+    # ── Create demo group ──────────────────────────────────────────────────
+    demo_key = f"demo_{demo_idx}"
+    demo = data_grp.create_group(demo_key)
+    demo.attrs["num_samples"] = T
 
-        # actions (top-level)
-        #actions = build_action_array_rel(ros_actions)  # Rel actions
-        #actions = build_action_array_abs(ros_actions)  # Abs actions
-        actions = build_action_array_joint(ros_actions, joint_pos_rel)   # Joint actions
-        print(f"Writing actions with shape {actions.shape} to HDF5...")
-        demo.create_dataset("actions",    data=actions)
+    if "IK-Rel" in env_name:
+        # Use relative (delta) actions for IK-Rel envs
+        actions = build_action_array_rel(ros_actions)
+    elif "IK-Abs" in env_name:
+        # Use absolute pose actions for IK-Abs envs
+        actions = build_action_array_abs(ros_actions)
+    else:
+        actions = build_action_array_joint(ros_actions, joint_pos_rel) 
 
-        # ── initial_state ──────────────────────────────────────────────────
-        init = demo.create_group("initial_state")
+    print(f"  [{demo_key}] Writing actions shape={actions.shape}")
+    actions /= ISAAC_SCALE  # scale down for IsaacLab's DifferentialIKControllerCfg
+    demo.create_dataset("actions", data=actions)
 
-        init_robot = init.create_group("articulation/robot")
-        init_robot.create_dataset("joint_position", data=robot_joint_pos_init)                      # (1, 12)
-        init_robot.create_dataset("joint_velocity", data=np.zeros((1, 12), dtype=np.float32))       # (1, 12)
-        init_robot.create_dataset("root_pose",      data=robot_root_pose)                           # (1, 7)
-        init_robot.create_dataset("root_velocity",  data=np.zeros((1, 6), dtype=np.float32))        # (1, 6)
+    # ── initial_state ──────────────────────────────────────────────────────
+    init = demo.create_group("initial_state")
 
-        init_obj = init.create_group("rigid_object/object")
-        init_obj.create_dataset("root_pose",     data=obj_root_pose_init)                           # (1, 7)
-        init_obj.create_dataset("root_velocity", data=np.zeros((1, 6), dtype=np.float32))           # (1, 6)
+    init_robot = init.create_group("articulation/robot")
+    init_robot.create_dataset("joint_position", data=robot_joint_pos_init)               # (1, 12)
+    init_robot.create_dataset("joint_velocity", data=np.zeros((1, 12), dtype=np.float32))# (1, 12)
+    init_robot.create_dataset("root_pose",      data=robot_root_pose)                    # (1, 7)
+    init_robot.create_dataset("root_velocity",  data=np.zeros((1, 6), dtype=np.float32)) # (1, 6)
 
-        # ── obs ────────────────────────────────────────────────────────────
-        obs_grp = demo.create_group("obs")
-        obs_grp.create_dataset("actions",                data=actions)                      # (T, 7)
-        obs_grp.create_dataset("eef_pos",                data=eef_pos)                      # (T, 3)
-        obs_grp.create_dataset("eef_quat",               data=eef_quat)                     # (T, 4)
-        obs_grp.create_dataset("gripper_pos",            data=gripper_pos)                  # (T, 2)
-        obs_grp.create_dataset("joint_pos",              data=joint_pos_rel)                    # (T, 12)
-        obs_grp.create_dataset("joint_vel",              data=joint_vel_rel)                    # (T, 12)
-        obs_grp.create_dataset("object_position",        data=object_pos)                   # (T, 3)
-        obs_grp.create_dataset("target_object_position", data=target_object_position)       # (T, 3)
+    init_obj = init.create_group("rigid_object/object")
+    init_obj.create_dataset("root_pose",     data=obj_root_pose_init)                    # (1, 7)
+    init_obj.create_dataset("root_velocity", data=np.zeros((1, 6), dtype=np.float32))    # (1, 6)
 
-        # ── states (per-timestep) ──────────────────────────────────────────
-        states = demo.create_group("states")
+    # ── obs ───────────────────────────────────────────────────────────────
+    obs_grp = demo.create_group("obs")
+    obs_grp.create_dataset("actions",                data=actions)                 # (T, action_dim)
+    obs_grp.create_dataset("eef_pos",                data=eef_pos)                # (T, 3)
+    obs_grp.create_dataset("eef_quat",               data=eef_quat)               # (T, 4)
+    obs_grp.create_dataset("gripper_pos",            data=gripper_pos)            # (T, 2)
+    obs_grp.create_dataset("joint_pos",              data=joint_pos_rel)          # (T, 12)
+    obs_grp.create_dataset("joint_vel",              data=joint_vel_rel)          # (T, 12)
+    obs_grp.create_dataset("object_position",        data=object_pos)             # (T, 3)
+    obs_grp.create_dataset("target_object_position", data=target_object_position) # (T, 3)
 
-        states_robot = states.create_group("articulation/robot")
-        states_robot.create_dataset("joint_position", data=joint_pos_abs)                           # (T, 12)
-        states_robot.create_dataset("joint_velocity", data=joint_vel_abs)                           # (T, 12)
-        states_robot.create_dataset("root_pose",      data=np.tile(robot_root_pose, (T, 1)))    # (T, 7)
-        states_robot.create_dataset("root_velocity",  data=np.zeros((T, 6), dtype=np.float32))  # (T, 6)
+    # ── states (per-timestep) ─────────────────────────────────────────────
+    states = demo.create_group("states")
 
-        states_obj = states.create_group("rigid_object/object")
-        states_obj.create_dataset("root_pose",     data=np.tile(obj_root_pose_init, (T, 1)))    # (T, 7)
-        states_obj.create_dataset("root_velocity", data=np.zeros((T, 6), dtype=np.float32))     # (T, 6)
+    states_robot = states.create_group("articulation/robot")
+    states_robot.create_dataset("joint_position", data=joint_pos_abs)                        # (T, 12)
+    states_robot.create_dataset("joint_velocity", data=joint_vel_abs)                        # (T, 12)
+    states_robot.create_dataset("root_pose",      data=np.tile(robot_root_pose, (T, 1)))     # (T, 7)
+    states_robot.create_dataset("root_velocity",  data=np.zeros((T, 6), dtype=np.float32))   # (T, 6)
 
-    print(f"Wrote {T} timesteps → {hdf5_file}")
+    states_obj = states.create_group("rigid_object/object")
+    states_obj.create_dataset("root_pose",     data=object_pose)  # (T, 7)
+    states_obj.create_dataset("root_velocity", data=np.zeros((T, 6), dtype=np.float32))   # (T, 6)
+
+    print(f"  [{demo_key}] Wrote {T} valid timesteps (skipped {T_raw - T} NaN rows)")
+    return T
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -413,49 +445,110 @@ def _gripper_binary(grasper_angle: float) -> float:
     """Convert continuous grasper_angle to binary action: +1 = open, -1 = close."""
     return 1.0 if grasper_angle >= GRIPPER_THRESHOLD else -1.0
 
-
-def _nearest_action_idx(action_timestamps: np.ndarray, query_ts: float) -> int:
-    """Return the index of the action whose timestamp is closest to query_ts."""
-    return int(np.argmin(np.abs(action_timestamps - query_ts)))
-
-
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Convert a ROS2 bag to Isaac Lab / Robomimic HDF5 format."
+        description=(
+            "Convert a folder of ROS2 bags to a single Isaac Lab / Robomimic HDF5.\n\n"
+            "Expected layout:\n"
+            "  <dataset_path>/\n"
+            "    demo_0/<bag>.db3\n"
+            "    demo_1/<bag>.db3\n"
+            "    ...\n"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
-        "--input_path",
+        "--dataset_path",
         type=str,
         required=True,
-        help="Path to the rosbag2 directory (the folder that contains metadata.yaml)",
+        help=(
+            "Root dataset directory that contains demo_0/, demo_1/, … sub-folders, "
+            "each holding one rosbag2 recording (.db3 file)."
+        ),
     )
     parser.add_argument(
         "--output_path",
         type=str,
         required=True,
-        help="Path for the output .hdf5 file",
+        help="Directory where the combined demo.hdf5 will be written.",
     )
     parser.add_argument(
         "--env_name",
         type=str,
         default="Isaac-Lift-Needle-MOPS-IK-Rel-v0",
-        help="Environment name written into HDF5 metadata (default: Isaac-Lift-Needle-MOPS-IK-Rel-v0)",
+        help="Environment name written into HDF5 metadata.",
     )
     args = parser.parse_args()
 
-    # ── Validate input ─────────────────────────────────────────────────────
-    if not Path(args.input_path).exists():
-        sys.exit(f"Input path does not exist: {args.input_path}")
+    dataset_root = Path(args.dataset_path)
+    if not dataset_root.exists():
+        sys.exit(f"Dataset path does not exist: {dataset_root}")
 
-    # ── Read bag ───────────────────────────────────────────────────────────
-    print(f"Reading bag: {args.input_path}")
-    data = read_bag(args.input_path)
+    # ── Discover demo sub-folders (any directory that contains a .db3 file) ──
+    demo_dirs = sorted(
+        (
+            d for d in dataset_root.iterdir()
+            if d.is_dir() and any(d.glob("*.db3"))
+        ),
+        key=lambda d: int(d.name.split("_")[1])
+    )
+    if not demo_dirs:
+        sys.exit(
+            f"No sub-directories containing .db3 files found under {dataset_root}.\n"
+            "Expected layout:  <dataset_path>/demo_0/<bag>.db3  demo_1/<bag>.db3  …"
+        )
 
-    write_hdf5(data, args.output_path, env_name=args.env_name)
+    print(f"Found {len(demo_dirs)} demo(s) under {dataset_root}:")
+    for d in demo_dirs:
+        print(f"  {d.name}/")
+
+    # ── Prepare output ────────────────────────────────────────────────────
+    hdf5_file = Path(args.output_path)
+    hdf5_file.parent.mkdir(parents=True, exist_ok=True)
+
+    total_timesteps = 0
+    failed_demos: list[str] = []
+
+    with h5py.File(hdf5_file, "w") as f:
+        data_grp = f.create_group("data")
+
+        for demo_idx, demo_dir in enumerate(demo_dirs):
+            print(f"\n[{demo_idx + 1}/{len(demo_dirs)}] Processing {demo_dir.name} …")
+            try:
+
+                bag_data = read_bag(str(demo_dir))
+                bag_data = {topic: msgs[WARMUP_STEPS:-END_STEPS] for topic, msgs in bag_data.items()}
+
+                # Decimate data 
+                bag_data = {topic: msgs[::DECIMATION] for topic, msgs in bag_data.items()}
+
+                for topic, msgs in bag_data.items():
+                    print(f"  [DEBUG] {topic}: {len(msgs)} messages after trim")
+                T = write_demo(
+                    data_grp,
+                    demo_idx,
+                    bag_data,
+                    env_name=args.env_name,
+                )
+                total_timesteps += T
+            except Exception as exc:
+                print(f"  WARNING: skipping {demo_dir.name} — {exc}")
+                failed_demos.append(demo_dir.name)
+
+        # Update the running total across all demos
+        data_grp.attrs["total"] = total_timesteps
+
+    n_written = len(demo_dirs) - len(failed_demos)
+    print(f"\n✓ Wrote {n_written} demo(s) / {total_timesteps} total timesteps → {hdf5_file}")
+    if failed_demos:
+        print(f"  Skipped ({len(failed_demos)}): {', '.join(failed_demos)}")
+
+
+        
 
 
 if __name__ == "__main__":
