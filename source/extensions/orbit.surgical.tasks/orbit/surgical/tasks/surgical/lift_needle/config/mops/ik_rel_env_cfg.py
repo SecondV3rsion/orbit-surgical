@@ -45,5 +45,5 @@ class NeedleLiftEnvCfg(joint_pos_env_cfg.NeedleLiftEnvCfg):
             ],
             body_name="tool_tcp0",
             controller=DifferentialIKControllerCfg(command_type="pose", use_relative_mode=True, ik_method="dls"),
-            scale=0.1,
+            scale=0.01,
         )
