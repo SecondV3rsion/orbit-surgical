@@ -112,7 +112,7 @@ class ObservationsCfg:
         target_object_position = ObsTerm(func=mdp.generated_commands_pos, params={"command_name": "object_pose"})
         actions = ObsTerm(func=mdp.last_action)
 
-        eef_pos_r = ObsTerm(func=mdp.ee_frame_pos_r)
+        eef_pos_b = ObsTerm(func=mdp.ee_frame_pos_b)
         eef_quat = ObsTerm(func=mdp.ee_frame_quat)
         gripper_pos = ObsTerm(func=mdp.gripper_state, params={"finger1_name": "tool_yaw1",
                                                             "finger2_name": "tool_yaw2", 
