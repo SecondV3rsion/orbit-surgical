@@ -108,12 +108,17 @@ class ObservationsCfg:
         joint_pos = ObsTerm(func=mdp.joint_pos_rel)
         joint_vel = ObsTerm(func=mdp.joint_vel_rel)
         object_position = ObsTerm(func=mdp.object_position_in_robot_root_frame)
-        target_object_position = ObsTerm(func=mdp.generated_commands, params={"command_name": "object_pose"})
+        target_object_position = ObsTerm(func=mdp.generated_commands_pos, params={"command_name": "object_pose"})
         actions = ObsTerm(func=mdp.last_action)
 
-        eef_pos = ObsTerm(func=mdp.ee_frame_pos)
-        eef_quat = ObsTerm(func=mdp.ee_frame_quat)
-        gripper_pos = ObsTerm(func=mdp.gripper_pos, params={"finger1_name": "tool_yaw1", "finger2_name": "tool_yaw2", "robot_cfg": SceneEntityCfg("robot")})
+        eef_pos_b = ObsTerm(func=mdp.ee_frame_pos_b)
+        eef_quat_b = ObsTerm(func=mdp.ee_frame_quat_b)
+        gripper_pos = ObsTerm(func=mdp.gripper_state, params={"finger1_name": "tool_yaw1",
+                                                            "finger2_name": "tool_yaw2",
+                                                            "robot_cfg": SceneEntityCfg("robot"),
+                                                            "open_value": 0.6,
+                                                            "close_value": 0.08,
+                                                            })
 
         def __post_init__(self):
             self.enable_corruption = False

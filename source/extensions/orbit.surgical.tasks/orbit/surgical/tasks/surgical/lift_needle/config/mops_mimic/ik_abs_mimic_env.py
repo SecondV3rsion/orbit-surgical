@@ -26,11 +26,10 @@ class NeedleLiftMimicEnv(ManagerBasedRLMimicEnv):
             env_ids = slice(None)
 
         # Retrieve end effector pose from the observation buffer
-        robot_base_pos = self.scene["robot"].data.root_pos_w[env_ids]  # (N, 3)
-        eef_pos = self.obs_buf["policy"]["eef_pos"][env_ids] - robot_base_pos
-        eef_quat = self.obs_buf["policy"]["eef_quat"][env_ids]
+        eef_pos_b = self.obs_buf["policy"]["eef_pos_b"][env_ids]
+        eef_quat_b = self.obs_buf["policy"]["eef_quat_b"][env_ids]
         # Quaternion format is w,x,y,z
-        return PoseUtils.make_pose(eef_pos, PoseUtils.matrix_from_quat(eef_quat))
+        return PoseUtils.make_pose(eef_pos_b, PoseUtils.matrix_from_quat(eef_quat_b))
     
     def target_eef_pose_to_action(
         self,

@@ -7,7 +7,7 @@
 import gymnasium as gym
 import os
 
-from . import agents, ik_rel_env_cfg, ik_abs_env_cfg, joint_pos_env_cfg
+from . import agents, ik_rel_env_cfg, ik_abs_env_cfg
 from . import ik_rel_mimic_env_cfg, ik_abs_mimic_env_cfg
 
 ##
