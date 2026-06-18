@@ -75,12 +75,12 @@ class CommandsCfg:
     object_pose = mdp.UniformPoseCommandCfg(
         asset_name="robot",
         body_name=MISSING,  # will be set by agent env cfg
-        resampling_time_range=(5.0, 5.0),
-        debug_vis=False,
+        resampling_time_range=(60.0, 60.0),
+        debug_vis=True,
         ranges=mdp.UniformPoseCommandCfg.Ranges(
-            pos_x=(0.65, 0.75),
-            pos_y=(-0.05, 0.05),
-            pos_z=(0.3, 0.35),
+            pos_x=(0.70, 0.70),
+            pos_y=(0.0, 0.0),
+            pos_z=(0.3, 0.3),
             roll=(DEFAULT_ROT_TCP[0], DEFAULT_ROT_TCP[0]),
             pitch=(DEFAULT_ROT_TCP[1], DEFAULT_ROT_TCP[1]),
             yaw=(DEFAULT_ROT_TCP[2], DEFAULT_ROT_TCP[2]),
@@ -145,6 +145,29 @@ class EventCfg:
             "asset_cfg": SceneEntityCfg("object", body_names="Object"),
         },
     )
+
+    # robot_joint_stiffness_and_damping = EventTerm(
+    #     func=mdp.randomize_actuator_gains,
+    #     mode="reset",
+    #     params={
+    #         "asset_cfg": SceneEntityCfg("robot", joint_names=["kuka_.*", "tool_.*"]),
+    #         "stiffness_distribution_params": (0.75, 1.5), # 75% to 150% of nominal
+    #         "damping_distribution_params": (0.3, 3.0),    # 30% to 300% of nominal
+    #         "operation": "scale",
+    #         "distribution": "log_uniform",
+    #     },
+    # )
+
+    # joint_friction = EventTerm(
+    #     func=mdp.randomize_joint_parameters,
+    #     mode="reset",
+    #     params={
+    #         "asset_cfg": SceneEntityCfg("robot", joint_names=["kuka_.*", "tool_.*"]),
+    #         "friction_distribution_params": (0.3, 0.7),    # Add 0.3 to 0.7 Nm friction
+    #         "operation": "add",
+    #         "distribution": "uniform",
+    #     },
+    # )
 
 
 @configclass
@@ -262,10 +285,10 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 4
+        self.decimation = 25
         self.sim.render_interval = self.decimation
-        self.episode_length_s = 5.0
+        self.episode_length_s = 30.0
         # simulation settings
-        self.sim.dt = 1.0 / 200.0
+        self.sim.dt = 1.0 / 100.0
         self.viewer.eye = (1.6, 0.0, 0.3)
         self.viewer.lookat = (0.1, 0.0, 0.04)
