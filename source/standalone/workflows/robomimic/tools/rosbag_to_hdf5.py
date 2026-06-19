@@ -69,7 +69,7 @@ TOPIC_MAP: dict[str, str] = {
     "/a/servo_joint_ik": "mops_msgs/msg/ToolEndEffectorState",
 }
 
-WARMUP_STEPS = DECIMATION * 1 # trim first N steps from every demo
+WARMUP_STEPS = DECIMATION * 41 # trim first N steps from every demo
 END_STEPS = DECIMATION * 1   # trim last N steps from every demo
 NEEDLE_CORRECTION = np.array([0.0, -0.0, 0.0])  # add this to object position to get needle tip position
 
