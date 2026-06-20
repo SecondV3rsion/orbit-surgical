@@ -57,6 +57,7 @@ class NeedleLiftEnvCfg(LiftEnvCfg):
             body_name="tool_tcp0",
             controller=DifferentialIKControllerCfg(command_type="pose", use_relative_mode=True, ik_method="dls"),
             scale=1.0,
+            clip={"kuka_A(1|2|3|4|5|6)": (-0.01, 0.01)},
         )
         self.actions.finger_joint_pos = mdp.BinaryJointPositionActionCfg(
             asset_name="robot",
