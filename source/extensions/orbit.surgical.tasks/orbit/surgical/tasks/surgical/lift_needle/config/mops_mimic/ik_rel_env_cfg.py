@@ -36,7 +36,7 @@ class NeedleLiftEnvCfg(LiftEnvCfg):
         # We switch here to a stiffer PD controller for IK tracking to be better.
         self.scene.robot = MOPS_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
         self.scene.robot.init_state = MOPS_CFG.InitialStateCfg(
-            pos=(0.0, 0.0, -0.208),  # initial position of the robot base
+            pos=(0.0, 0.0, -0.20),  # initial position of the robot base
             rot=MOPS_CFG.init_state.rot,  # initial orientation of the robot bas
             joint_pos=MOPS_CFG.init_state.joint_pos,  # initial joint positions
         )

@@ -55,6 +55,7 @@ except ImportError:
 # ── Isaac Lab sim parameters (must match your env cfg) ─────────────────────
 ISAAC_SCALE = 1.0   # scale= in DifferentialInverseKinematicsActionCfg
 DECIMATION = 5
+CLIP = [-0.01, 0.01]
 
 # ── Gripper constants ──────────────────────────────────────────────────────────
 GRIPPER_OPEN_VALUE   = 0.6    # grasper_angle value that means "open"
@@ -69,11 +70,11 @@ TOPIC_MAP: dict[str, str] = {
     "/a/servo_joint_ik": "mops_msgs/msg/ToolEndEffectorState",
 }
 
-WARMUP_STEPS = DECIMATION * 41 # trim first N steps from every demo
-END_STEPS = DECIMATION * 1   # trim last N steps from every demo
+WARMUP_STEPS = 0 # trim first N steps from every demo
+END_STEPS =  1   # trim last N steps from every demo
 NEEDLE_CORRECTION = np.array([0.0, -0.0, 0.0])  # add this to object position to get needle tip position
 
-robot_root_pos = np.array([0.0, 0.0, -0.21], dtype=np.float32)
+robot_root_pos = np.array([0.0, 0.0, -0.20], dtype=np.float32)
 robot_root_quat = np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float32)
 robot_default_quat = np.array([0.0, 0.707, 0.0, -0.707], dtype=np.float32)
 
@@ -149,7 +150,42 @@ def read_bag(bag_path: str) -> dict[str, list[tuple[float, object]]]:
 # Action processing
 # ---------------------------------------------------------------------------
 
-def build_action_array_rel(actions: np.ndarray) -> np.ndarray:
+
+def clip_actions(actions: np.ndarray, clip: np.ndarray) -> np.ndarray:
+    """
+    Split each action that exceeds [clip[0], clip[1]] into multiple
+    smaller sub-actions, preserving total cumulative displacement.
+    Dimensions beyond the first 6 (e.g. gripper) are copied to every sub-action.
+
+    Parameters
+    ----------
+    actions  : (T, D) ndarray  — full action array (rel actions + gripper + ...)
+    clip     : (2,)  ndarray  — [min, max] bounds applied to first 6 dims only
+
+    Returns
+    -------
+    (T', D) ndarray  where T' >= T
+    """
+    clip_min, clip_max = float(clip[0]), float(clip[1])
+    orig_dtype = actions.dtype
+    result = []
+    tol = 1e-9
+
+    for action in actions:
+        rel       = action[:6].astype(np.float64)
+        extra     = action[6:]                       # gripper + anything else
+        remaining = rel.copy()
+
+        while np.any(remaining > clip_max + tol) or np.any(remaining < clip_min - tol):
+            chunk = np.clip(remaining, clip_min, clip_max)
+            result.append(np.concatenate([chunk, extra]))  # carry extra dims
+            remaining = remaining - chunk
+
+        result.append(np.concatenate([remaining, extra]))  # final in-range piece
+
+    return np.array(result, dtype=orig_dtype)
+
+def build_action_array_rel(actions: np.ndarray, clip=None) -> np.ndarray:
     """
     Convert absolute EEF pose actions to relative (delta) actions.
 
@@ -185,6 +221,11 @@ def build_action_array_rel(actions: np.ndarray) -> np.ndarray:
             out[i, 3:6]  = delta_rot.as_euler('xyz').astype(np.float32)
 
         out[i, 6] = _gripper_binary(grip[i])
+
+    if clip is not None:
+        print(f"  Original shape: {out.shape[0]}")
+        out = clip_actions(out, clip)
+        print(f"  Clipped shape: {out.shape[0]}")
 
     return out
 
@@ -383,7 +424,7 @@ def write_demo(
 
     if "IK-Rel" in env_name:
         # Use relative (delta) actions for IK-Rel envs
-        actions = build_action_array_rel(ros_actions)
+        actions = build_action_array_rel(ros_actions, CLIP)
     elif "IK-Abs" in env_name:
         # Use absolute pose actions for IK-Abs envs
         actions = build_action_array_abs(ros_actions)
@@ -407,29 +448,29 @@ def write_demo(
     init_obj.create_dataset("root_pose",     data=obj_root_pose_init)                    # (1, 7)
     init_obj.create_dataset("root_velocity", data=np.zeros((1, 6), dtype=np.float32))    # (1, 6)
 
-    # ── obs ───────────────────────────────────────────────────────────────
-    obs_grp = demo.create_group("obs")
-    obs_grp.create_dataset("actions",                data=actions)                 # (T, action_dim)
-    obs_grp.create_dataset("eef_pos",                data=eef_pos)                # (T, 3)
-    obs_grp.create_dataset("eef_quat",               data=eef_quat)               # (T, 4)
-    obs_grp.create_dataset("gripper_pos",            data=gripper_pos)            # (T, 2)
-    obs_grp.create_dataset("joint_pos",              data=joint_pos_rel)          # (T, 12)
-    obs_grp.create_dataset("joint_vel",              data=joint_vel_rel)          # (T, 12)
-    obs_grp.create_dataset("object_position",        data=object_pos)             # (T, 3)
-    obs_grp.create_dataset("target_object_position", data=target_object_position) # (T, 3)
+    # # ── obs ───────────────────────────────────────────────────────────────
+    # obs_grp = demo.create_group("obs")
+    # obs_grp.create_dataset("actions",                data=actions)                 # (T, action_dim)
+    # obs_grp.create_dataset("eef_pos_b",                data=eef_pos)                # (T, 3)
+    # obs_grp.create_dataset("eef_quat_b",               data=eef_quat)               # (T, 4)
+    # obs_grp.create_dataset("gripper_pos",            data=gripper_pos)            # (T, 2)
+    # obs_grp.create_dataset("joint_pos",              data=joint_pos_rel)          # (T, 12)
+    # obs_grp.create_dataset("joint_vel",              data=joint_vel_rel)          # (T, 12)
+    # obs_grp.create_dataset("object_position",        data=object_pos)             # (T, 3)
+    # obs_grp.create_dataset("target_object_position", data=target_object_position) # (T, 3)
 
-    # ── states (per-timestep) ─────────────────────────────────────────────
-    states = demo.create_group("states")
+    # # ── states (per-timestep) ─────────────────────────────────────────────
+    # states = demo.create_group("states")
 
-    states_robot = states.create_group("articulation/robot")
-    states_robot.create_dataset("joint_position", data=joint_pos_abs)                        # (T, 12)
-    states_robot.create_dataset("joint_velocity", data=joint_vel_abs)                        # (T, 12)
-    states_robot.create_dataset("root_pose",      data=np.tile(robot_root_pose, (T, 1)))     # (T, 7)
-    states_robot.create_dataset("root_velocity",  data=np.zeros((T, 6), dtype=np.float32))   # (T, 6)
+    # states_robot = states.create_group("articulation/robot")
+    # states_robot.create_dataset("joint_position", data=joint_pos_abs)                        # (T, 12)
+    # states_robot.create_dataset("joint_velocity", data=joint_vel_abs)                        # (T, 12)
+    # states_robot.create_dataset("root_pose",      data=np.tile(robot_root_pose, (T, 1)))     # (T, 7)
+    # states_robot.create_dataset("root_velocity",  data=np.zeros((T, 6), dtype=np.float32))   # (T, 6)
 
-    states_obj = states.create_group("rigid_object/object")
-    states_obj.create_dataset("root_pose",     data=object_pose)  # (T, 7)
-    states_obj.create_dataset("root_velocity", data=np.zeros((T, 6), dtype=np.float32))   # (T, 6)
+    # states_obj = states.create_group("rigid_object/object")
+    # states_obj.create_dataset("root_pose",     data=object_pose)  # (T, 7)
+    # states_obj.create_dataset("root_velocity", data=np.zeros((T, 6), dtype=np.float32))   # (T, 6)
 
     print(f"  [{demo_key}] Wrote {T} valid timesteps (skipped {T_raw - T} NaN rows)")
     return T
