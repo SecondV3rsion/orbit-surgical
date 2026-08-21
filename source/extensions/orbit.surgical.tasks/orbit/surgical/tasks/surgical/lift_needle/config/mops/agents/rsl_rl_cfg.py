@@ -13,9 +13,9 @@ from isaaclab_rl.rsl_rl import (
 
 @configclass
 class LiftNeedlePPORunnerCfg(RslRlOnPolicyRunnerCfg):
-    num_steps_per_env = 48
+    num_steps_per_env = 50
     max_iterations = 5000
-    save_interval = 100
+    save_interval = 50
     experiment_name = "mops_needle_lift"
     empirical_normalization = False
     policy = RslRlPpoActorCriticCfg(

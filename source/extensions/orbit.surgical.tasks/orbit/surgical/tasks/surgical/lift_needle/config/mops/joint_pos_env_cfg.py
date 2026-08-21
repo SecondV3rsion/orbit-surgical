@@ -50,7 +50,7 @@ class NeedleLiftEnvCfg(LiftEnvCfg):
                 "tool_roll",
                 "tool_pitch",
             ],
-            scale=0.5,
+            scale=0.025,
             use_default_offset=True,
         )
         self.actions.finger_joint_pos = mdp.BinaryJointPositionActionCfg(

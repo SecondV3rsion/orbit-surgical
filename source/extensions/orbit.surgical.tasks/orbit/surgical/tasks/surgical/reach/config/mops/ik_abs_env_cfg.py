@@ -41,8 +41,8 @@ class MOPSReachEnvCfg(joint_pos_env_cfg.MOPSReachEnvCfg):
                 "tool_yaw0",
             ],
             body_name="tool_tcp0",
-            controller=DifferentialIKControllerCfg(command_type="position", use_relative_mode=False, ik_method="dls"),
-            scale=0.5,
+            controller=DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, ik_method="dls"),
+            scale=(0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0),
         )
 
 
