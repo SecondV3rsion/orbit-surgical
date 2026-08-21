@@ -95,7 +95,7 @@ def rollout(policy, env, success_term, horizon, device):
         # Prepare observations
         obs = copy.deepcopy(obs_dict["policy"])
         for ob in obs:
-            obs[ob] = torch.squeeze(obs[ob])
+            obs[ob] = torch.squeeze(obs[ob], 0)
 
         # Check if environment image observations
         if hasattr(env.cfg, "image_obs_list"):

@@ -26,10 +26,10 @@ class NeedleLiftMimicEnv(ManagerBasedRLMimicEnv):
             env_ids = slice(None)
 
         # Retrieve end effector pose from the observation buffer
-        eef_pos = self.obs_buf["policy"]["eef_pos_b"][env_ids]
-        eef_quat = self.obs_buf["policy"]["eef_quat_b"][env_ids]
+        eef_pos_b = self.obs_buf["policy"]["eef_pos_b"][env_ids]
+        eef_quat_b = self.obs_buf["policy"]["eef_quat_b"][env_ids]
         # Quaternion format is w,x,y,z
-        return PoseUtils.make_pose(eef_pos, PoseUtils.matrix_from_quat(eef_quat))
+        return PoseUtils.make_pose(eef_pos_b, PoseUtils.matrix_from_quat(eef_quat_b))
     
     def target_eef_pose_to_action(
         self,
@@ -39,84 +39,31 @@ class NeedleLiftMimicEnv(ManagerBasedRLMimicEnv):
         env_id: int = 0,
     ) -> torch.Tensor:
         """
-        Takes a target pose and gripper action for the end effector controller and returns an action
-        (usually a normalized delta pose action) to try and achieve that target pose.
-        Noise is added to the target pose action if specified.
-
-        Args:
-            target_eef_pose_dict: Dictionary of 4x4 target eef pose for each end-effector.
-            gripper_action_dict: Dictionary of gripper actions for each end-effector.
-            noise: Noise to add to the action. If None, no noise is added.
-            env_id: Environment index to get the action for.
-
-        Returns:
-            An action torch.Tensor that's compatible with env.step().
+        Converts absolute target EEF pose into absolute action format.
+        Mimics IsaacLab relative action implementation structure.
         """
-        eef_name = list(self.cfg.subtask_configs.keys())[0]
-
         # target position and rotation
         (target_eef_pose,) = target_eef_pose_dict.values()
         target_pos, target_rot = PoseUtils.unmake_pose(target_eef_pose)
 
-        # current position and rotation
-        curr_pose = self.get_robot_eef_pose(eef_name, env_ids=[env_id])[0]
-        curr_pos, curr_rot = PoseUtils.unmake_pose(curr_pose)
-
-        # normalized delta position action
-        delta_position = target_pos - curr_pos
-
-        # normalized delta rotation action
-        delta_rot_mat = target_rot.matmul(curr_rot.transpose(-1, -2))
-        delta_quat = PoseUtils.quat_from_matrix(delta_rot_mat)
-        delta_rotation = PoseUtils.axis_angle_from_quat(delta_quat)
-
-        # get gripper action for single eef
+        # get gripper action
         (gripper_action,) = gripper_action_dict.values()
 
         # add noise to action
-        pose_action = torch.cat([delta_position, delta_rotation], dim=0)
+        pose_action = torch.cat([target_pos, PoseUtils.quat_from_matrix(target_rot)], dim=0)
         if action_noise_dict is not None:
             noise = action_noise_dict["mops"] * torch.randn_like(pose_action)
             pose_action += noise
-            pose_action = torch.clamp(pose_action, -1.0, 1.0)
-
-        return torch.cat([pose_action, gripper_action], dim=0)
+        
+        return torch.cat([pose_action, gripper_action], dim=0).unsqueeze(0)
     
     def action_to_target_eef_pose(self, action: torch.Tensor) -> dict[str, torch.Tensor]:
-        """
-        Converts action (compatible with env.step) to a target pose for the end effector controller.
-        Inverse of @target_eef_pose_to_action. Usually used to infer a sequence of target controller poses
-        from a demonstration trajectory using the recorded actions.
-
-        Args:
-            action: Environment action. Shape is (num_envs, action_dim)
-
-        Returns:
-            A dictionary of eef pose torch.Tensor that @action corresponds to
-        """
+        """Convert action to target pose."""
         eef_name = list(self.cfg.subtask_configs.keys())[0]
 
-        delta_position = action[:, :3]
-        delta_rotation = action[:, 3:6]
-
-        # current position and rotation
-        curr_pose = self.get_robot_eef_pose(eef_name, env_ids=None)
-        curr_pos, curr_rot = PoseUtils.unmake_pose(curr_pose)
-
-        # get pose target
-        target_pos = curr_pos + delta_position
-
-        # Convert delta_rotation to axis angle form
-        delta_rotation_angle = torch.linalg.norm(delta_rotation, dim=-1, keepdim=True)
-        delta_rotation_axis = delta_rotation / delta_rotation_angle
-
-        # Handle invalid division for the case when delta_rotation_angle is close to zero
-        is_close_to_zero_angle = torch.isclose(delta_rotation_angle, torch.zeros_like(delta_rotation_angle)).squeeze(1)
-        delta_rotation_axis[is_close_to_zero_angle] = torch.zeros_like(delta_rotation_axis)[is_close_to_zero_angle]
-
-        delta_quat = PoseUtils.quat_from_angle_axis(delta_rotation_angle.squeeze(1), delta_rotation_axis).squeeze(0)
-        delta_rot_mat = PoseUtils.matrix_from_quat(delta_quat)
-        target_rot = torch.matmul(delta_rot_mat, curr_rot)
+        target_pos = action[:, :3]
+        target_quat = action[:, 3:7]
+        target_rot = PoseUtils.matrix_from_quat(target_quat)
 
         target_poses = PoseUtils.make_pose(target_pos, target_rot).clone()
 

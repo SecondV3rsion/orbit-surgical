@@ -36,7 +36,7 @@ class NeedleLiftEnvCfg(LiftEnvCfg):
         # We switch here to a stiffer PD controller for IK tracking to be better.
         self.scene.robot = MOPS_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
         self.scene.robot.init_state = MOPS_CFG.InitialStateCfg(
-            pos=(0.0, 0.0, -0.20),  # initial position of the robot base
+            pos=(0.0, 0.0, -0.21),  # initial position of the robot base
             rot=MOPS_CFG.init_state.rot,  # initial orientation of the robot bas
             joint_pos=MOPS_CFG.init_state.joint_pos,  # initial joint positions
         )
@@ -55,9 +55,8 @@ class NeedleLiftEnvCfg(LiftEnvCfg):
                 "tool_pitch",
             ],
             body_name="tool_tcp0",
-            controller=DifferentialIKControllerCfg(command_type="pose", use_relative_mode=True, ik_method="dls"),
+            controller=DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, ik_method="dls"),
             scale=1.0,
-            clip={"kuka_A(1|2|3|4|5|6)": (-0.01, 0.01)},
         )
         self.actions.finger_joint_pos = mdp.BinaryJointPositionActionCfg(
             asset_name="robot",

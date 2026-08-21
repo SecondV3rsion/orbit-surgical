@@ -87,8 +87,8 @@
         "modalities": {
             "obs": {
                 "low_dim": [
-                    "eef_pos",
-                    "eef_quat",
+                    "eef_pos_b",
+                    "eef_quat_b",
                     "gripper_pos",
                     "object_position",
                     "target_object_position"

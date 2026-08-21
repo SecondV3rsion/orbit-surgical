@@ -1,7 +1,7 @@
 {
     "algo_name": "bc",
     "experiment": {
-        "name": "bc_mlp",
+        "name": "bc_mlp_rnn",
         "validate": false,
         "logging": {
             "terminal_output_to_txt": true,
@@ -30,10 +30,10 @@
         "num_data_workers": 4,
         "hdf5_cache_mode": "all",
         "hdf5_use_swmr": true,
-        "hdf5_normalize_obs": true,
+        "hdf5_normalize_obs": false,
         "hdf5_filter_key": null,
         "hdf5_validation_filter_key": null,
-        "seq_length": 1,
+        "seq_length": 10,
         "dataset_keys": [
             "actions"
         ],
@@ -48,7 +48,7 @@
             "policy": {
                 "optimizer_type": "adam",
                 "learning_rate": {
-                    "initial": 0.0003,
+                    "initial": 0.001,
                     "decay_factor": 0.1,
                     "epoch_schedule": [],
                     "scheduler_type": "multistep"
@@ -63,12 +63,24 @@
             "l1_weight": 0.0,
             "cos_weight": 0.0
         },
-        "actor_layer_dims": [256,128,64],
-        "gmm": {
-            "enabled": false
+        "actor_layer_dims": [512, 512],
+        "gaussian": {
+            "enabled": true,
+            "fixed_std": false,
+            "init_std": 0.1,
+            "min_std": 0.01,
+            "std_activation": "softplus"
         },
         "rnn": {
-            "enabled": false
+            "enabled": false,
+            "horizon": 10,
+            "hidden_dim": 400,
+            "rnn_type": "LSTM",
+            "num_layers": 2,
+            "open_loop": false,
+            "kwargs": {
+                "bidirectional": false
+            }
         }
     },
     "observation": {

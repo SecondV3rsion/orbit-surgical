@@ -37,6 +37,8 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
     robot: ArticulationCfg = MISSING
     # end-effector sensor: will be populated by agent env cfg
     ee_frame: FrameTransformerCfg = MISSING
+    finger_1_frame: FrameTransformerCfg = MISSING
+    finger_2_frame: FrameTransformerCfg = MISSING
     # target object: will be populated by agent env cfg
     object: RigidObjectCfg = MISSING
 
@@ -73,18 +75,18 @@ class CommandsCfg:
         asset_name="robot",
         body_name=MISSING,  # will be set by agent env cfg
         resampling_time_range=(5.0, 5.0),
-        debug_vis=True,
+        debug_vis=False,
         ranges=mdp.UniformPoseCommandCfg.Ranges(
-            pos_x=(0.65, 0.65),
+            pos_x=(0.70, 0.70),
             pos_y=(0.0, 0.0),
-            pos_z=(0.3, 0.3),
+            pos_z=(0.30, 0.30),
             roll=(DEFAULT_ROT_TCP[0], DEFAULT_ROT_TCP[0]),
             pitch=(DEFAULT_ROT_TCP[1], DEFAULT_ROT_TCP[1]),
             yaw=(DEFAULT_ROT_TCP[2], DEFAULT_ROT_TCP[2]),
         ),
     )
 
-    #object_pose.current_pose_visualizer_cfg.markers["frame"].scale = (0.01, 0.01, 0.01)
+    object_pose.current_pose_visualizer_cfg.markers["frame"].scale = (0.02, 0.02, 0.02)
 
 @configclass
 class ActionsCfg:
@@ -106,12 +108,17 @@ class ObservationsCfg:
         joint_pos = ObsTerm(func=mdp.joint_pos_rel)
         joint_vel = ObsTerm(func=mdp.joint_vel_rel)
         object_position = ObsTerm(func=mdp.object_position_in_robot_root_frame)
-        target_object_position = ObsTerm(func=mdp.generated_commands, params={"command_name": "object_pose"})
+        target_object_position = ObsTerm(func=mdp.generated_commands_pos, params={"command_name": "object_pose"})
         actions = ObsTerm(func=mdp.last_action)
 
-        eef_pos = ObsTerm(func=mdp.ee_frame_pos)
-        eef_quat = ObsTerm(func=mdp.ee_frame_quat)
-        gripper_pos = ObsTerm(func=mdp.gripper_pos, params={"finger1_name": "tool_yaw1", "finger2_name": "tool_yaw2", "robot_cfg": SceneEntityCfg("robot")})
+        eef_pos_b = ObsTerm(func=mdp.ee_frame_pos_b)
+        eef_quat_b = ObsTerm(func=mdp.ee_frame_quat_b)
+        gripper_pos = ObsTerm(func=mdp.gripper_state, params={"finger1_name": "tool_yaw1",
+                                                            "finger2_name": "tool_yaw2",
+                                                            "robot_cfg": SceneEntityCfg("robot"),
+                                                            "open_value": 0.6,
+                                                            "close_value": 0.08,
+                                                            })
 
         def __post_init__(self):
             self.enable_corruption = False
@@ -122,11 +129,13 @@ class ObservationsCfg:
         """Observations for subtask group."""
         
         grasp = ObsTerm(
-            func=mdp.object_grasped,
+            func=mdp.object_grasping,
             params={
                 "robot_cfg": SceneEntityCfg("robot"),
                 "ee_frame_cfg": SceneEntityCfg("ee_frame"),
                 "object_cfg": SceneEntityCfg("object"),
+                "diff_threshold": 0.015,
+                "gripper_threshold": 0.1,
             },
         )
         object_lifted = ObsTerm(
@@ -139,8 +148,8 @@ class ObservationsCfg:
 
         goal_reached = ObsTerm(func=mdp.object_reached_goal,
                                params={
-                                   "threshold": 0.025,
-                               },
+                                   "threshold": 0.04,
+                                },
                                )
 
         def __post_init__(self):
@@ -149,7 +158,7 @@ class ObservationsCfg:
 
     # observation groups
     policy: PolicyCfg = PolicyCfg()
-    subtask: SubtaskCfg = SubtaskCfg()
+    subtask_terms: SubtaskCfg = SubtaskCfg()
 
 
 @configclass
@@ -179,7 +188,9 @@ class TerminationsCfg:
         func=mdp.root_height_below_minimum, params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("object")}
     )
 
-    success = DoneTerm(func=mdp.object_reached_goal)
+    success = DoneTerm(func=mdp.object_reached_goal,
+                       params={"threshold": 0.03}
+                     )
                        
 
 ##
@@ -206,10 +217,10 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 5
+        self.decimation = 25
         self.sim.render_interval = self.decimation
-        self.episode_length_s = 20.0
+        self.episode_length_s = 30.0
         # simulation settings
-        self.sim.dt = 0.01 # 100Hz
+        self.sim.dt = 1/100
         self.viewer.eye = (1.4, 0.0, 0.3)
         self.viewer.lookat = (0.1, 0.0, 0.04)
