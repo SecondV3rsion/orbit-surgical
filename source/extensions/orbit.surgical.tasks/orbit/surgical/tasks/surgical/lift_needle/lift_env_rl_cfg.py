@@ -75,19 +75,19 @@ class CommandsCfg:
     object_pose = mdp.UniformPoseCommandCfg(
         asset_name="robot",
         body_name=MISSING,  # will be set by agent env cfg
-        resampling_time_range=(3.0, 3.0),
+        resampling_time_range=(60.0, 60.0),
         debug_vis=False,
         ranges=mdp.UniformPoseCommandCfg.Ranges(
-            pos_x=(0.65, 0.75),
-            pos_y=(-0.05, 0.05),
-            pos_z=(0.3, 0.35),
+            pos_x=(0.70, 0.70),
+            pos_y=(0.0, 0.0),
+            pos_z=(0.3, 0.3),
             roll=(DEFAULT_ROT_TCP[0], DEFAULT_ROT_TCP[0]),
             pitch=(DEFAULT_ROT_TCP[1], DEFAULT_ROT_TCP[1]),
             yaw=(DEFAULT_ROT_TCP[2], DEFAULT_ROT_TCP[2]),
         ),
     )
 
-    object_pose.current_pose_visualizer_cfg.markers["frame"].scale = (0.1, 0.1, 0.1)
+    object_pose.current_pose_visualizer_cfg.markers["frame"].scale = (0.01, 0.01, 0.01)
 
 @configclass
 class ActionsCfg:
@@ -109,12 +109,17 @@ class ObservationsCfg:
         joint_pos = ObsTerm(func=mdp.joint_pos_rel)
         joint_vel = ObsTerm(func=mdp.joint_vel_rel)
         object_position = ObsTerm(func=mdp.object_position_in_robot_root_frame)
-        target_object_position = ObsTerm(func=mdp.generated_commands, params={"command_name": "object_pose"})
+        target_object_position = ObsTerm(func=mdp.generated_commands_pos, params={"command_name": "object_pose"})
         actions = ObsTerm(func=mdp.last_action)
 
-        eef_pos = ObsTerm(func=mdp.ee_frame_pos)
+        eef_pos_b = ObsTerm(func=mdp.ee_frame_pos_b)
         eef_quat = ObsTerm(func=mdp.ee_frame_quat)
-        gripper_pos = ObsTerm(func=mdp.gripper_pos, params={"finger1_name": "tool_yaw1", "finger2_name": "tool_yaw2", "robot_cfg": SceneEntityCfg("robot")})
+        gripper_pos = ObsTerm(func=mdp.gripper_state, params={"finger1_name": "tool_yaw1",
+                                                            "finger2_name": "tool_yaw2", 
+                                                            "robot_cfg": SceneEntityCfg("robot"),
+                                                            "open_value": 0.6,
+                                                            "close_value": 0.08,
+                                                            })
 
 
         def __post_init__(self):
@@ -141,105 +146,81 @@ class EventCfg:
         },
     )
 
+    # robot_joint_stiffness_and_damping = EventTerm(
+    #     func=mdp.randomize_actuator_gains,
+    #     mode="reset",
+    #     params={
+    #         "asset_cfg": SceneEntityCfg("robot", joint_names=["kuka_.*", "tool_.*"]),
+    #         "stiffness_distribution_params": (0.75, 1.5), # 75% to 150% of nominal
+    #         "damping_distribution_params": (0.3, 3.0),    # 30% to 300% of nominal
+    #         "operation": "scale",
+    #         "distribution": "log_uniform",
+    #     },
+    # )
+
+    # joint_friction = EventTerm(
+    #     func=mdp.randomize_joint_parameters,
+    #     mode="reset",
+    #     params={
+    #         "asset_cfg": SceneEntityCfg("robot", joint_names=["kuka_.*", "tool_.*"]),
+    #         "friction_distribution_params": (0.3, 0.7),    # Add 0.3 to 0.7 Nm friction
+    #         "operation": "add",
+    #         "distribution": "uniform",
+    #     },
+    # )
+
 
 @configclass
 class RewardsCfg:
     """Reward terms for the MDP."""
 
     #REACH----------------------------
-    #reaching_object = RewTerm(func=mdp.object_open_ee_distance, params={"std": 0.1}, weight=0.2)
-
-    # reaching_object_xy = RewTerm(func=mdp.object_ee_xy_distance, params={"std": 0.03}, weight=0.1)
-    # reaching_object_height = RewTerm(func=mdp.ee_height_above_object, params={"target_height": 0.0025, "std": 0.002}, weight=0.1)
-
-    # orientation_error = RewTerm(
-    #     func=mdp.orientation_command_error,
-    #     params={"command_name": "object_pose", "asset_cfg": SceneEntityCfg("robot", body_names="tool_tcp0")},
-    #     weight=-0.2,
-    # )
-    #-----------------------------------
-
-    #GRASP---------------------------
-    #reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.03}, weight=0.5)
-
-    # orientation_error = RewTerm(
-    #     func=mdp.orientation_command_error,
-    #     params={"command_name": "object_pose", "asset_cfg": SceneEntityCfg("robot", body_names="tool_tcp0")},
-    #     weight=-0.2,
-    # )
-    
-    # grasping_object = RewTerm(
-    #     func=mdp.object_grasping, 
-    #     params={"robot_cfg": SceneEntityCfg("robot"), "ee_frame_cfg": SceneEntityCfg("ee_frame"), 
-    #             "object_cfg": SceneEntityCfg("object"), "gripper_open_val": torch.tensor([0.6]),
-    #             "diff_threshold": 0.03,
-    #             "gripper_threshold": 0.1
-    #             }, 
-    #     weight=0.4)
-    
-    # object_grasped = RewTerm(
-    #     func=mdp.object_grasped, 
-    #     params={"robot_cfg": SceneEntityCfg("robot"), "ee_frame_cfg": SceneEntityCfg("ee_frame"), 
-    #             "object_cfg": SceneEntityCfg("object"), "gripper_open_val": torch.tensor([0.6]),
-    #             "diff_threshold": 0.01,
-    #             "gripper_threshold": 0.4
-    #             },  
-    #     weight=5.0)
-    
-    # between_fingers = RewTerm(
-    #     func=mdp.between_fingers, 
-    #     params={"ee_frame_cfg": SceneEntityCfg("ee_frame"), 
-    #             "finger1_frame_cfg": SceneEntityCfg("finger_1_frame"),
-    #             "finger2_frame_cfg": SceneEntityCfg("finger_2_frame"),
-    #             "object_cfg": SceneEntityCfg("object"), 
-    #             "std": 0.02,
-    #             "z_offset": 0.02,
-    #             "x_offset": 0.02
-    #             }, 
-    #     weight=5.0)
-    
-    #-----------------------------------
-
-    # FULL TASK---------------------------
+    reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.05}, weight=0.2)
 
     orientation_error = RewTerm(
         func=mdp.orientation_command_error,
         params={"command_name": "object_pose", "asset_cfg": SceneEntityCfg("robot", body_names="tool_tcp0")},
-        weight=-3.0,
+        weight=-0.05,
     )
+    #-----------------------------------
 
-    # object_grasped = RewTerm(
-    #     func=mdp.object_grasped, 
-    #     params={"robot_cfg": SceneEntityCfg("robot"), "ee_frame_cfg": SceneEntityCfg("ee_frame"), 
-    #             "object_cfg": SceneEntityCfg("object"), "gripper_open_val": torch.tensor([0.6]),
-    #             "diff_threshold": 0.01,
-    #             "gripper_threshold": 0.4
-    #             },  
-    #     weight=5.0)
+    #GRASP---------------------------
+
+    # grasping_object = RewTerm(
+    # func=mdp.object_grasping, 
+    # params={"robot_cfg": SceneEntityCfg("robot"),
+    #         "ee_frame_cfg": SceneEntityCfg("ee_frame"), 
+    #         "object_cfg": SceneEntityCfg("object"),
+    #         "diff_threshold": 0.02,
+    #         "gripper_threshold": 0.1
+    #         },  
+    # weight=0.4)
     
-    # between_fingers = RewTerm(
-    #     func=mdp.between_fingers, 
-    #     params={"ee_frame_cfg": SceneEntityCfg("ee_frame"), 
-    #             "finger1_frame_cfg": SceneEntityCfg("finger_1_frame"),
-    #             "finger2_frame_cfg": SceneEntityCfg("finger_2_frame"),
-    #             "object_cfg": SceneEntityCfg("object"), 
-    #             "std": 0.02,
-    #             "z_offset": 0.02,
-    #             "x_offset": 0.02
-    #             }, 
-    #     weight=5.0)
+    object_grasped = RewTerm(
+        func=mdp.object_grasped, 
+        params={"robot_cfg": SceneEntityCfg("robot"),
+                "ee_frame_cfg": SceneEntityCfg("ee_frame"), 
+                "object_cfg": SceneEntityCfg("object"),
+                "diff_threshold": 0.01,
+                "gripper_threshold": 0.4
+                },  
+        weight=2.0)
+    
+    #-----------------------------------
 
-    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.01}, weight=5.0)
+    # LIFT ---------------------------
+
+    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.02}, weight=5.0)
     
     object_goal_tracking = RewTerm(
         func=mdp.object_goal_distance,
-        params={"std": 0.2, "minimal_height": 0.01, "command_name": "object_pose"},
+        params={"std": 0.2, "minimal_height": 0.02, "command_name": "object_pose"},
         weight=16.0,
     )
 
     object_goal_tracking_fine_grained = RewTerm(
         func=mdp.object_goal_distance,
-        params={"std": 0.05, "minimal_height": 0.01, "command_name": "object_pose"},
+        params={"std": 0.05, "minimal_height": 0.02, "command_name": "object_pose"},
         weight=5.0,
     )
 
@@ -247,7 +228,7 @@ class RewardsCfg:
 
     joint_vel = RewTerm(
         func=mdp.joint_vel_l2,
-        weight=-1e-3,
+        weight=-1e-4,
         params={"asset_cfg": SceneEntityCfg("robot")},
     )                
 
@@ -257,13 +238,13 @@ class CurriculumCfg:
 
     # Increase penalty for action rate gradually
 
-    action_rate = CurrTerm(
-        func=mdp.modify_reward_weight, params={"term_name": "action_rate", "weight": -1e-1, "num_steps": 20000}
-    )
+    # action_rate = CurrTerm(
+    #     func=mdp.modify_reward_weight, params={"term_name": "action_rate", "weight": -0.005, "num_steps": 4500}
+    # )
 
-    joint_vel = CurrTerm(
-        func=mdp.modify_reward_weight, params={"term_name": "joint_vel", "weight": -1e-1, "num_steps": 20000}
-    )    
+    # joint_vel = CurrTerm(
+    #     func=mdp.modify_reward_weight, params={"term_name": "joint_vel", "weight": -0.001, "num_steps": 4500}
+    # )  
 
 @configclass
 class TerminationsCfg:
@@ -272,13 +253,13 @@ class TerminationsCfg:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
 
     object_dropping = DoneTerm(
-        func=mdp.root_height_below_minimum, params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("object")}
+        func=mdp.root_height_below_minimum, params={"minimum_height": -0.02, "asset_cfg": SceneEntityCfg("object")}
     ) 
 
-    # success = DoneTerm(
-    #     func=mdp.object_reached_goal,
-    #     params={"threshold": 0.02}
-    # )
+    success = DoneTerm(
+        func=mdp.object_reached_goal,
+        params={"threshold": 0.02}
+    )
 
 ##
 # Environment configuration
@@ -304,10 +285,10 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 4
+        self.decimation = 25
         self.sim.render_interval = self.decimation
-        self.episode_length_s = 3.0
+        self.episode_length_s = 30.0
         # simulation settings
-        self.sim.dt = 1.0 / 200.0
-        self.viewer.eye = (1.4, 0.0, 0.3)
+        self.sim.dt = 1.0 / 100.0
+        self.viewer.eye = (1.6, 0.0, 0.3)
         self.viewer.lookat = (0.1, 0.0, 0.04)
